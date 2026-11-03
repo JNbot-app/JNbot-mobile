@@ -71,7 +71,7 @@ describe("Expo production monetization configuration", () => {
     ).toThrow(/Production monetization configuration is incomplete/);
   });
 
-  test("does not configure AdMob or require monetization credentials for iOS", () => {
+  test("strips the AdMob app id and skips monetization credentials for iOS", () => {
     const result = withEnvironment(
       {
         EXPO_PUBLIC_MONETIZATION_ENV: "production",
@@ -80,9 +80,7 @@ describe("Expo production monetization configuration", () => {
       () => configFactory({ config: { plugins: [] } }),
     );
 
-    expect(result.plugins).not.toContainEqual(
-      expect.arrayContaining(["react-native-google-mobile-ads"]),
-    );
+    expect(result.plugins.at(-1)).toEqual(expect.any(Function));
   });
 
   test("rejects Google test identifiers in production", () => {

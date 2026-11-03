@@ -133,7 +133,11 @@ export type ScriptActionInfo = Pick<MacroInfo, "name" | "pluginId"> & {
 export type { Reminder as Cooldown } from '../generated/client-contract/cooldowns';
 import type { Reminder as Cooldown } from '../generated/client-contract/cooldowns';
 import type { Trigger } from '../generated/client-contract/triggers';
-import type { MobileActivityStats, NotificationButton } from '../generated/client-contract/mobileClientContract';
+import type {
+  MobileActivityStats,
+  NotificationButton,
+  ProfilePluginReference,
+} from '../generated/client-contract/mobileClientContract';
 
 export type Reminder = Cooldown;
 
@@ -222,7 +226,7 @@ export interface JNdataDataSection {
   color: string;
   icon: string | null;
   onlineMode?: boolean;
-  scripts?: any;
+  scripts?: ProfilePluginReference[];
   /** Profile UI plugin reference; rendered on the account screen. */
   profileUiAction?: unknown;
   disallowedPlugins?: string[];

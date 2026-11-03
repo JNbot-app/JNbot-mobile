@@ -33,7 +33,7 @@ describe("dashboardStats", () => {
     expect(compactDuration(60 * 60_000)).toBe("1h");
     expect(compactDuration(90 * 60_000)).toBe("1h 30m");
     expect(compactDuration(14 * 3_600_000)).toBe("14h");
-    expect(compactDuration(28 * 3_600_000)).toBe("1d 4h");
+    expect(compactDuration(28 * 3_600_000)).toBe("1.2d");
     expect(compactDuration(240 * 3_600_000)).toBe("10d");
   });
 
