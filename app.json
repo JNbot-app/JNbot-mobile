@@ -3,7 +3,7 @@
     "name": "JNbot",
     "slug": "jnbot",
     "version": "3.3.1",
-    "description": "JNbot Mobile is an unofficial companion for controlling a JNbot desktop instance and supported Minecraft automation profiles. NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.",
+    "description": "JNbot for iOS and Android. Run and automate Minecraft bots directly on your phone, or connect to your JNbot desktop to control it from anywhere. NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "jnbot",

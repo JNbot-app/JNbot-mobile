@@ -1,22 +1,22 @@
 # JNbot Mobile
 
-JNbot Mobile is an iOS/Android companion for a running JNbot desktop instance. It is a remote client: bots and scripts continue to run on the desktop, while the phone connects through JNbot's authenticated peer-to-peer WebRTC channel.
+JNbot Mobile brings JNbot to iOS and Android. Run and automate Minecraft bots directly on your phone with the embedded JNbot runtime, or connect to your JNbot desktop to control it from anywhere.
 
-## What it supports
+## Features
 
-- Select from profiles granted to the access link.
-- Monitor and control active scripts and bots per profile.
-- Browse and run installed plugins and actions.
-- Configure supported plugin options without exposing plugin source code.
-- Send bot chat and commands, inspect live inventories, select slots, and close windows.
+- Run bots locally on the device.
+- Connect to a JNbot desktop instance through an authenticated peer-to-peer WebRTC channel.
+- Manage profiles and Minecraft accounts.
+- Join, monitor and control bots: chat, commands, live inventories and logs.
+- Automate with scripts, chains and schedules.
+- Install plugins from the marketplace, import them, record actions and share them.
+- Home screen widgets for bots and cooldowns.
 
-Profile editing, marketplace installation, plugin editing, local bot execution, and advanced desktop tools stay in the desktop application.
+## Connecting to desktop
 
-## Pairing
+In JNbot desktop, open **Remote access**, start the host, then create or select a device access link. Scan its **JNbot Mobile** QR code or paste the generated `jnbot://connect` link into the app.
 
-In the desktop app, open **Remote access**, start the host, then create or select a device access link. Scan its **JNbot Mobile** QR code or paste the generated `jnbot://connect` link into the app.
-
-The device token is stored in the operating system secure keychain. The selected mobile profile is local to the phone and never changes the desktop's selected profile.
+The device token is stored in the operating system's secure keychain. The selected mobile profile is local to the phone and never changes the desktop's selected profile.
 
 ## Development
 
