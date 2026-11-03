@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="match_parent"
+  android:layout_height="wrap_content"
+  android:gravity="center_vertical"
+  android:orientation="horizontal"
+  android:paddingVertical="4dp">
+  <TextView
+    android:id="@+id/row_name"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:layout_weight="1"
+    android:ellipsize="end"
+    android:singleLine="true"
+    android:textColor="@color/widget_text"
+    android:textSize="13sp" />
+  <Chronometer
+    android:id="@+id/row_timer"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="8dp"
+    android:fontFeatureSettings="tnum"
+    android:singleLine="true"
+    android:textColor="@color/widget_text"
+    android:textSize="13sp" />
+  <TextView
+    android:id="@+id/row_text"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="8dp"
+    android:singleLine="true"
+    android:textColor="@color/widget_text"
+    android:textSize="13sp"
+    android:visibility="gone" />
+</LinearLayout>

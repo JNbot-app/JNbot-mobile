@@ -1,0 +1,107 @@
+{
+  "expo": {
+    "name": "JNbot",
+    "slug": "jnbot",
+    "version": "3.3.1",
+    "description": "JNbot Mobile is an unofficial companion for controlling a JNbot desktop instance and supported Minecraft automation profiles. NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "jnbot",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#08090A"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.jnbot.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Used to scan the pairing QR code shown in the desktop app.",
+        "ITSAppUsesNonExemptEncryption": false,
+        "ALTAppGroups": [
+          "group.com.jnbot.app"
+        ]
+      },
+      "entitlements": {
+        "com.apple.security.application-groups": [
+          "group.com.jnbot.app"
+        ]
+      }
+    },
+    "android": {
+      "package": "com.jnbot.app",
+      "versionCode": 27,
+      "adaptiveIcon": {
+        "backgroundColor": "#08090A",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": true,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_SPECIAL_USE",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.WAKE_LOCK",
+        "android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"
+      ],
+      "blockedPermissions": [
+        "android.permission.FOREGROUND_SERVICE_DATA_SYNC",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/android-icon-monochrome.png"
+        }
+      ],
+      [
+        "expo-secure-store",
+        {
+          "faceIDPermission": false
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
+      ],
+      "./plugins/withLocalBackend",
+      "./plugins/withBackgroundService",
+      "./plugins/withXcodeNodePath",
+      "@bacons/apple-targets",
+      "./plugins/withAndroidArchitectures",
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "jnbot-mobile",
+          "organization": "usserwout"
+        }
+      ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "8b89cf0e-4a32-417b-9728-ee68b869d76a"
+      }
+    },
+    "owner": "usserwout"
+  }
+}

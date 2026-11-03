@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="match_parent"
+  android:layout_height="wrap_content"
+  android:gravity="center_vertical"
+  android:orientation="horizontal">
+  <ImageView
+    android:id="@+id/title_icon"
+    android:layout_width="14dp"
+    android:layout_height="14dp"
+    android:src="@drawable/widget_ic_hourglass"
+    android:tint="@color/widget_primary" />
+  <TextView
+    android:id="@+id/title"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="6dp"
+    android:ellipsize="end"
+    android:fontFamily="sans-serif-medium"
+    android:maxWidth="160dp"
+    android:singleLine="true"
+    android:text="@string/widget_cooldowns_label"
+    android:textColor="@color/widget_muted"
+    android:textSize="12sp" />
+  <TextView
+    android:id="@+id/meta"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="8dp"
+    android:layout_weight="1"
+    android:ellipsize="end"
+    android:gravity="end"
+    android:singleLine="true"
+    android:textColor="@color/widget_faint"
+    android:textSize="12sp" />
+</LinearLayout>

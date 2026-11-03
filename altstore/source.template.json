@@ -1,0 +1,41 @@
+{
+  "name": "JNbot",
+  "subtitle": "Minecraft bot management on the go.",
+  "description": "JNbot is a mobile companion for managing Minecraft bots, monitoring activity, and controlling supported automation profiles. NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.",
+  "website": "https://github.com/usserwout/JNbot-updater",
+  "apps": [
+    {
+      "name": "JNbot",
+      "bundleIdentifier": "com.jnbot.app",
+      "developerName": "JNbot",
+      "subtitle": "Manage your Minecraft bots from your iPhone or iPad.",
+      "localizedDescription": "JNbot is a Minecraft bot management app for monitoring connected bots, interacting with instances, managing inventory and scripts, and controlling supported automation profiles from your phone. NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.",
+      "iconURL": "https://raw.githubusercontent.com/usserwout/JNbot-updater/main/images/icon.png",
+      "screenshots": [
+        "https://raw.githubusercontent.com/usserwout/JNbot-updater/main/images/overviewPage.png",
+        "https://raw.githubusercontent.com/usserwout/JNbot-updater/main/images/movementPage.png",
+        "https://raw.githubusercontent.com/usserwout/JNbot-updater/main/images/scriptPage.png",
+        "https://raw.githubusercontent.com/usserwout/JNbot-updater/main/images/accountPage.png"
+      ],
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {
+          "NSCameraUsageDescription": "Used to scan the pairing QR code shown in the desktop app."
+        }
+      },
+      "versions": [
+        {
+          "version": "3.1.2",
+          "buildVersion": "1",
+          "date": "2026-01-01T00:00:00Z",
+          "localizedDescription": "Initial JNbot release.",
+          "downloadURL": "https://github.com/usserwout/JNbot-updater/releases/download/v3.1.2/JNbot.ipa",
+          "size": 0,
+          "sha256": "REPLACE_WITH_SHA256",
+          "minOSVersion": "15.1"
+        }
+      ]
+    }
+  ],
+  "news": []
+}

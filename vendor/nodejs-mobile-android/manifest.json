@@ -1,0 +1,21 @@
+{
+  "packageVersion": "18.20.4",
+  "origin": {
+    "issue": "https://github.com/nodejs-mobile/nodejs-mobile-react-native/issues/94",
+    "contributor": "ubaidimranofficial",
+    "download": "https://drive.google.com/file/d/1bAbdB-NOuQZLrZTnOxYhy6KRtQUSbm6T/view",
+    "sourceRevision": null,
+    "buildFlags": null
+  },
+  "compiler": "Android (8075178) clang 14.0.1; LLD 14.0.1",
+  "libraries": {
+    "arm64-v8a": {
+      "file": "arm64-v8a.so.gz",
+      "sha256": "980faf3f312183bd0abe06cf4d57148da68a8e991d089919591e117e13e5054d"
+    },
+    "x86_64": {
+      "file": "x86_64.so.gz",
+      "sha256": "1549a72d59d377b8c1ffb5588862004ea8ce282efe7f7dd4d991915feb7d8510"
+    }
+  }
+}

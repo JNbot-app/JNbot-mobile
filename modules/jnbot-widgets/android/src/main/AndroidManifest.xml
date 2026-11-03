@@ -1,0 +1,22 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <application>
+    <receiver
+      android:name="com.jnbot.app.widgets.CooldownsWidgetProvider"
+      android:exported="false"
+      android:label="@string/widget_cooldowns_label">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_cooldowns_info" />
+    </receiver>
+    <receiver
+      android:name="com.jnbot.app.widgets.BotsWidgetProvider"
+      android:exported="false"
+      android:label="@string/widget_bots_label">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_bots_info" />
+    </receiver>
+  </application>
+</manifest>

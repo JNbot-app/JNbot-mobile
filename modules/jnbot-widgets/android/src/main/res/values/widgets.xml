@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="widget_cooldowns_label">Cooldowns</string>
+  <string name="widget_cooldowns_description">See when your next cooldown is ready</string>
+  <string name="widget_bots_label">Bots</string>
+  <string name="widget_bots_description">Check which bots are online</string>
+  <dimen name="widget_radius">22dp</dimen>
+  <dimen name="widget_padding">16dp</dimen>
+  <color name="widget_bg">#121315</color>
+  <color name="widget_text">#F5F5F7</color>
+  <color name="widget_muted">#B0B0B7</color>
+  <color name="widget_faint">#92929A</color>
+  <color name="widget_primary">#FF7A45</color>
+  <color name="widget_track">#33FFFFFF</color>
+</resources>

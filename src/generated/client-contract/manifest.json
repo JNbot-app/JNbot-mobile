@@ -1,0 +1,24 @@
+{
+  "contractVersion": 1,
+  "files": {
+    "chains.ts": "f6662634dae8d9ce55d405860b4b34b5b1eabe0b2d1e99bdc4b2891983c6d081",
+    "clientPermissions.ts": "68b08e37c06ee671b8bfb03c0c4c48004ae280a1e56001552fb1f5fbfd3f785c",
+    "cooldowns.ts": "32408dae3b9ccc402a348ba7805fefa71dcc4977adb584303da98b00aa302f27",
+    "mobileClientContract.ts": "f29cf5c91f3c345c1052fc6fea306d0ef90f9a060b01443ef4aa9e37b2f369d7",
+    "pluginSignatures.ts": "6942f094d949ef33abd2bbc15f14b08de2129f2acf223bb73fe4c5405445dbb1",
+    "profileCreation.ts": "5757f9904eac086aef75e6019b4fc10e234192752f637e0caf9d8a9604d58052",
+    "profileUiSchema.ts": "9f8445b94917af4b3a255d895b0ee4117983fab1a9c00f14a74a94a7cafee3f2",
+    "share.ts": "4e5230e4293fceea3d448035e91a212631cde55d0f34f0ad3f5a6a0d93141365",
+    "statsHistory.ts": "271d7ed0fb3ea4a3b62a89a931ba3d376ec9f9b4416b3f9acf550bd33b18408b",
+    "triggers.ts": "f4292bb4349c5b0f7b5b63472a1fcdd808be8648ef02104abe226dfff21d8092",
+    "messaging/Address.ts": "d692bf186de1a41f0dbd5c3c16ebaf8864ed7c401cfd5b610b0e18f9ec0a7391",
+    "messaging/Errors.ts": "6bf0ffb7e9a69f241011fa2873c9ec62de2a3c8c16a519af2a36afb24b0df6f3",
+    "messaging/Protocol.ts": "c1523a29eefab1f8b30d76ae2517e0181bfe4b1545b0d4caa79b6fe58cea51e7",
+    "messaging/Transport.ts": "1365a24bac6000ea7c9941308c165499e127abb0494db1754902f374e76dfc00",
+    "messaging/NetworkFrame.ts": "421d887d100c05b62843665faf9a60fb041db94092ebad095f900d7ef503dcf4",
+    "messaging/Messenger.ts": "08b267d8bba4c2e409b9329a905017312e982a159def502080c54dd9f62b4902"
+  },
+  "assets": {
+    "inventory-textures.json": "469dafae13930bfd6ad631d0dd5c2beecc852a9b9bc366b974c0bfeafbb6c0f7"
+  }
+}

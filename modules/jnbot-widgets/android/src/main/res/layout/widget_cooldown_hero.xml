@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="0dp"
+  android:layout_height="match_parent"
+  android:layout_weight="1"
+  android:gravity="bottom"
+  android:orientation="vertical">
+  <TextView
+    android:id="@+id/hero_name"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:ellipsize="end"
+    android:singleLine="true"
+    android:textColor="@color/widget_muted"
+    android:textSize="13sp" />
+  <Chronometer
+    android:id="@+id/hero_timer"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:fontFamily="sans-serif-medium"
+    android:fontFeatureSettings="tnum"
+    android:includeFontPadding="false"
+    android:singleLine="true"
+    android:textColor="@color/widget_text"
+    android:textSize="30sp" />
+  <TextView
+    android:id="@+id/hero_text"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:fontFamily="sans-serif-medium"
+    android:includeFontPadding="false"
+    android:singleLine="true"
+    android:textColor="@color/widget_text"
+    android:textSize="24sp"
+    android:visibility="gone" />
+  <ProgressBar
+    android:id="@+id/hero_progress"
+    style="?android:attr/progressBarStyleHorizontal"
+    android:layout_width="match_parent"
+    android:layout_height="4dp"
+    android:layout_marginTop="8dp"
+    android:max="1000"
+    android:progressDrawable="@drawable/widget_progress" />
+</LinearLayout>
