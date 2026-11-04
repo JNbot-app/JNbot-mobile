@@ -12,20 +12,24 @@ const OPTIONS = [
 ] as const;
 
 /** Replace / keep both / skip picker for a plugin that is already installed. */
-export function ConflictChoices({
+export function ConflictChoices<Action extends ConflictAction = ConflictAction>({
   value,
   onChange,
+  title = "A plugin with this ID already exists:",
+  options = OPTIONS as unknown as readonly { id: Action; label: string }[],
 }: {
-  value: ConflictAction;
-  onChange: (action: ConflictAction) => void;
+  value: Action;
+  onChange: (action: Action) => void;
+  title?: string;
+  options?: readonly { id: Action; label: string }[];
 }) {
   return (
     <View style={styles.section}>
       <Txt variant="label" style={{ color: colors.warning }}>
-        A plugin with this ID already exists:
+        {title}
       </Txt>
       <View style={styles.row}>
-        {OPTIONS.map((option) => {
+        {options.map((option) => {
           const active = value === option.id;
           return (
             <Pressable

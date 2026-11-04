@@ -1,25 +1,33 @@
 import { useCallback } from 'react';
 import { useRouter } from 'expo-router';
 import {
+  defaultPluginAction,
   previewNeedsCheck,
   type MarketEntry,
   type ShareInstallInput,
+  type SharePluginAction,
   type SharePreview,
 } from '../../generated/client-contract/share';
-import type { ConflictAction } from '../../components/ConflictChoices';
 import { useConnection } from '../../net/ConnectionProvider';
 import { useStore } from '../../store/store';
 
 export const pluginKey = (plugin: SharePreview['plugins'][number]) => `${plugin.ownerId}:${plugin.pluginId}`;
 
 /**
- * Installs shares and then opens what they added: a profile becomes the active one,
- * chains open their page, plugins and triggers their list.
+ * Installs shares without navigating; only an installed profile becomes the active one.
+ * `openInstalled` opens an already installed item on its page.
  */
 export function useInstallShare() {
   const router = useRouter();
   const { shareAction, selectProfile } = useConnection();
   const profileKey = useStore((state) => state.activeProfileKey);
+
+  const activateInstalled = useCallback(
+    async (kind: SharePreview['kind'], localRef: string) => {
+      if (kind === 'profile') await selectProfile(localRef);
+    },
+    [selectProfile],
+  );
 
   const openInstalled = useCallback(
     async (kind: SharePreview['kind'], localRef: string) => {
@@ -36,22 +44,22 @@ export function useInstallShare() {
   );
 
   const install = useCallback(
-    async (preview: SharePreview, actions: Record<string, ConflictAction> = {}, trustPublisher = false) => {
+    async (preview: SharePreview, actions: Record<string, SharePluginAction> = {}, trustPublisher = false) => {
       const { localRef } = await shareAction<{ localRef: string }>('SHARE_INSTALL', {
         id: preview.id,
         decisions: preview.plugins.map((plugin) => ({
           ownerId: plugin.ownerId,
           pluginId: plugin.pluginId,
           revision: plugin.revision,
-          action: actions[pluginKey(plugin)] ?? 'replace',
+          action: actions[pluginKey(plugin)] ?? defaultPluginAction(plugin),
           acceptUnverified: true,
         })),
         trustPublisher,
         ...(preview.kind === 'chain' || preview.kind === 'trigger' ? { profileKey: profileKey ?? undefined } : {}),
       } satisfies ShareInstallInput);
-      await openInstalled(preview.kind, localRef);
+      await activateInstalled(preview.kind, localRef);
     },
-    [openInstalled, profileKey, shareAction],
+    [activateInstalled, profileKey, shareAction],
   );
 
   /** One-tap install from the catalog. Returns false when the share needs a closer look first. */

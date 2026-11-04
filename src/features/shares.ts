@@ -1,11 +1,14 @@
 import { useCallback, useEffect } from "react";
 import { useRouter } from "expo-router";
-import type {
-  MarketEntry,
-  ShareCreateInput,
-  ShareKind,
-  ShareState,
+import {
+  SHARE_KIND_LABELS,
+  shareUpdateAvailable,
+  type MarketEntry,
+  type ShareCreateInput,
+  type ShareKind,
+  type ShareState,
 } from "../generated/client-contract/share";
+import { useFeedback } from "../components/AppFeedback";
 import { useConnection } from "../net/ConnectionProvider";
 import type { ShareAction } from "../runtime/JNbotRuntime";
 import { useMarket, useShares } from "./shareStore";
@@ -21,6 +24,37 @@ export function useOpenShareLink() {
     (target: ShareTarget) => router.push({ pathname: "/(app)/share-link", params: { ...target } }),
     [router],
   );
+}
+
+/**
+ * Update action for an item installed from a share: opens the update when one is
+ * known, otherwise checks the server first. Undefined when it was not installed
+ * from a share, or when shares cannot be managed from this connection.
+ */
+export function useShareUpdateAction(kind: ShareKind, localRef: string) {
+  const router = useRouter();
+  const { shareAction, mode } = useConnection();
+  const { showMessage } = useFeedback();
+  const share = useShares((state) => findShare(state.installed, kind, (item) => item.localRef === localRef));
+  const appVersion = useShares((state) => state.appVersion);
+  if (!share || mode !== "local") return undefined;
+
+  const available = shareUpdateAvailable(share, appVersion);
+  const run = async () => {
+    try {
+      const state = available ? undefined : await shareAction<ShareState>("SHARE_CHECK_UPDATES", share.id);
+      if (state) useShares.setState(state);
+      const latest = state?.installed[share.id];
+      if (available || (latest && shareUpdateAvailable(latest, state.appVersion))) {
+        router.push({ pathname: "/(app)/share/[id]", params: { id: share.id } });
+      } else {
+        showMessage(`This ${SHARE_KIND_LABELS[kind].toLowerCase()} is up to date`, "success");
+      }
+    } catch (cause) {
+      showMessage(cause instanceof Error ? cause.message : String(cause), "error");
+    }
+  };
+  return { available, run, label: available ? `Update from ${share.ownerName}` : "Check for updates" };
 }
 
 const MUTATIONS = new Set<ShareAction>([

@@ -5,7 +5,7 @@ import { useAsyncAction } from "../../hooks/useAsyncAction";
 import { useClient } from "../../net/ConnectionProvider";
 import { useStore } from "../../store/store";
 import { TriggerEditor } from "./TriggerEditor";
-import { useOpenShareLink, useShareActions } from "../../features/shares";
+import { useOpenShareLink, useShareActions, useShareUpdateAction } from "../../features/shares";
 
 /** Shared save/toggle/delete flow for the trigger list and the bot tab. */
 export function useTriggerEditor() {
@@ -15,6 +15,8 @@ export function useTriggerEditor() {
   const profileKey = useStore((state) => state.activeProfileKey);
   const { local: canShare } = useShareActions();
   const openShareLink = useOpenShareLink();
+
+  const shareUpdate = useShareUpdateAction("trigger", editing?.trigger.id ?? "");
 
   const write = (update: (triggers: Trigger[]) => Trigger[]) => {
     if (!client) return Promise.reject(new Error("Connect to JNbot before editing triggers."));
@@ -58,6 +60,8 @@ export function useTriggerEditor() {
       busy={busy}
       onClose={() => setEditing(null)}
       onDelete={remove}
+      onCheckUpdate={shareUpdate?.run}
+      checkUpdateLabel={shareUpdate?.label}
       onShare={
         canShare
           ? (trigger) => {

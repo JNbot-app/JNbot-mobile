@@ -102,6 +102,7 @@ export default function MarketplaceScreen() {
     setBusyId(entry.id);
     try {
       if (!(await quickInstall(entry))) open(entry);
+      else showMessage(`${entry.listing.title} installed`, 'success');
     } catch (cause) {
       showMessage(`Could not install: ${cause instanceof Error ? cause.message : String(cause)}`, 'error');
     }

@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Screen } from "../../../src/components/Screen";
 import { NativeIcon } from "../../../src/components/NativeIcon";
 import { Badge, Button, Card, EmptyState, Txt } from "../../../src/components/ui";
-import { ConflictChoices, type ConflictAction } from "../../../src/components/ConflictChoices";
+import { ConflictChoices } from "../../../src/components/ConflictChoices";
 import { KindBanner, KindTile } from "../../../src/features/marketplace/KindTile";
 import { useInstallShare, pluginKey } from "../../../src/features/marketplace/useInstallShare";
 import { ShareContents } from "../../../src/features/marketplace/ShareContents";
@@ -15,6 +15,7 @@ import { selectCanUsePlugins, useStore } from "../../../src/store/store";
 import { colors, font, radii, spacing } from "../../../src/theme/theme";
 import {
   SHARE_KIND_LABELS,
+  defaultPluginAction,
   entryOverview,
   previewBlocked,
   previewNeedsCheck,
@@ -22,6 +23,7 @@ import {
   shareInstallKey,
   shareInstallState,
   type ShareInstallState,
+  type SharePluginAction,
   type SharePluginPreview,
   type SharePreview,
   type ShareOverview,
@@ -32,14 +34,24 @@ import { useFeedback } from "../../../src/components/AppFeedback";
 const keyOf = pluginKey;
 const INSTALL_LABELS = { none: "Install", update: "Update", installed: "Open" } as const;
 
+const CONFLICT_OPTIONS = [
+  { id: "replace", label: "Replace" },
+  { id: "skip", label: "Skip" },
+] as const;
+
+const UPDATE_OPTIONS = [
+  { id: "skip", label: "Keep yours" },
+  { id: "replace", label: "Update" },
+] as const;
+
 function PluginRow({
   plugin,
   action,
   onAction,
 }: {
   plugin: SharePluginPreview;
-  action: ConflictAction;
-  onAction?: (action: ConflictAction) => void;
+  action: SharePluginAction;
+  onAction?: (action: SharePluginAction) => void;
 }) {
   const [showCode, setShowCode] = useState(false);
   const blocked = plugin.state === "invalid" || plugin.state === "unsupported";
@@ -61,7 +73,17 @@ function PluginRow({
           {plugin.reason ?? "This plugin cannot be installed."}
         </Txt>
       ) : null}
-      {plugin.state === "conflict" && onAction ? <ConflictChoices value={action} onChange={onAction} /> : null}
+      {plugin.state === "conflict" && onAction ? (
+        <ConflictChoices value={action} onChange={onAction} options={CONFLICT_OPTIONS} />
+      ) : null}
+      {plugin.state === "update" && onAction ? (
+        <ConflictChoices
+          value={action}
+          onChange={onAction}
+          options={UPDATE_OPTIONS}
+          title="This share has an update for this plugin:"
+        />
+      ) : null}
       {plugin.code ? (
         <>
           <Pressable onPress={() => setShowCode(!showCode)}>
@@ -78,7 +100,15 @@ function PluginRow({
   );
 }
 
-function Header({ overview, installState }: { overview: ShareOverview; installState: ShareInstallState }) {
+function Header({
+  overview,
+  installState,
+  reviewed,
+}: {
+  overview: ShareOverview;
+  installState: ShareInstallState;
+  reviewed: boolean;
+}) {
   const { publisher, kind } = overview;
   const media = kind === "plugin" || kind === "bundle";
   const state = publisher.official
@@ -87,7 +117,9 @@ function Header({ overview, installState }: { overview: ShareOverview; installSt
       ? { label: "You", color: colors.textMuted }
       : publisher.trusted
         ? { label: "Trusted", color: colors.success }
-        : { label: "New publisher", color: colors.warning };
+        : reviewed
+          ? null
+          : { label: "Unverified publisher", color: colors.danger };
   return (
     <View style={{ gap: spacing.lg }}>
       <View style={styles.titleRow}>
@@ -96,7 +128,13 @@ function Header({ overview, installState }: { overview: ShareOverview; installSt
           <Txt style={styles.title} numberOfLines={2}>{overview.title}</Txt>
           <Txt variant="muted" numberOfLines={1} style={{ fontWeight: font.weight.semibold }}>{publisher.name}</Txt>
           <Txt variant="faint" numberOfLines={1}>
-            {SHARE_KIND_LABELS[kind]} · <Txt variant="faint" style={{ color: state.color }}>{state.label}</Txt>
+            {SHARE_KIND_LABELS[kind]}
+            {state ? (
+              <>
+                {" · "}
+                <Txt variant="faint" style={{ color: state.color }}>{state.label}</Txt>
+              </>
+            ) : null}
           </Txt>
         </View>
       </View>
@@ -136,7 +174,7 @@ export default function ShareScreen() {
   const [error, setError] = useState<string | null>(null);
   const [checking, setChecking] = useState(!initialEntry);
   const [busy, setBusy] = useState<"code" | "install" | null>(null);
-  const [actions, setActions] = useState<Record<string, ConflictAction>>({});
+  const [actions, setActions] = useState<Record<string, SharePluginAction>>({});
   const [trustPublisher, setTrustPublisher] = useState(false);
   const [riskAccepted, setRiskAccepted] = useState(false);
   const [reporting, setReporting] = useState(false);
@@ -156,7 +194,10 @@ export default function ShareScreen() {
   };
 
   useEffect(() => {
-    if (canUsePlugins && id && !initialEntry) void load();
+    if (!canUsePlugins || !id) return;
+    if (!initialEntry) void load();
+    // The catalog entry needs no download, but installs deleted since must not show as installed.
+    else void shareAction<ShareState>("SHARE_STATE", undefined).then(useShares.setState, () => {});
   }, [canUsePlugins, id]);
 
   const overview = preview ? previewOverview(preview) : initialEntry ? entryOverview(initialEntry) : null;
@@ -178,7 +219,12 @@ export default function ShareScreen() {
   }
 
   const installState = shareInstallState(install, overview.revision, overview.minAppVersion, appVersion, overview.publisher.own);
-  const risky = !!preview && !preview.publisher.trusted && preview.plugins.length > 0;
+  // Marketplace entries always carry an official approval.
+  const reviewed = !!initialEntry || !!preview?.reviewed;
+  const { official, own, trusted } = overview.publisher;
+  const unverifiedPublisher = !official && !own && !trusted && !reviewed;
+  const needsTrust = (share: SharePreview) => !share.publisher.trusted && !share.reviewed && share.plugins.length > 0;
+  const risky = !!preview && needsTrust(preview);
   const showCheck = checking && !!preview;
 
   const showCode = async () => {
@@ -211,12 +257,14 @@ export default function ShareScreen() {
       setBusy(null);
       return;
     }
-    if (!loaded.publisher.trusted && loaded.plugins.length > 0 && !riskAccepted) {
+    if (needsTrust(loaded) && !riskAccepted) {
       setBusy(null);
       return;
     }
     try {
       await installShare(loaded, actions, trustPublisher);
+      showMessage(`${overview.title} installed`, "success");
+      setBusy(null);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
       setBusy(null);
@@ -226,7 +274,7 @@ export default function ShareScreen() {
   return (
     <Screen title={overview.title} subtitle={SHARE_KIND_LABELS[overview.kind]} back>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
-        <Header overview={overview} installState={installState} />
+        <Header overview={overview} installState={installState} reviewed={reviewed} />
         <ShareContents overview={overview} />
 
         {showCheck && preview ? (
@@ -241,7 +289,7 @@ export default function ShareScreen() {
               <PluginRow
                 key={keyOf(plugin)}
                 plugin={plugin}
-                action={actions[keyOf(plugin)] ?? "replace"}
+                action={actions[keyOf(plugin)] ?? defaultPluginAction(plugin)}
                 onAction={
                   preview.kind === "profile"
                     ? undefined
@@ -278,7 +326,7 @@ export default function ShareScreen() {
 
         {error ? <Txt style={{ color: colors.danger }}>{error}</Txt> : null}
 
-        {(initialEntry || preview?.reviewed) && !overview.publisher.own ? (
+        {reviewed && !overview.publisher.own ? (
           reporting ? (
             <Card style={{ gap: spacing.sm }}>
               <Txt variant="label">What is wrong with it?</Txt>
@@ -305,6 +353,12 @@ export default function ShareScreen() {
         {!overview.canInstall ? (
           <Txt variant="muted" style={{ color: colors.warning }}>
             Needs JNbot {overview.minAppVersion} or newer. Update JNbot to install it.
+          </Txt>
+        ) : null}
+        {unverifiedPublisher && installState !== "installed" ? (
+          <Txt variant="muted" style={{ color: colors.danger }}>
+            <Txt variant="label" style={{ color: colors.danger }}>Only install from people you trust.</Txt> This publisher is
+            unverified, and installing can run code on your device.
           </Txt>
         ) : null}
         {installState !== "own" ? (

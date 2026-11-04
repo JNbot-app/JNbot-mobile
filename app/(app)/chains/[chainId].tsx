@@ -24,7 +24,7 @@ import { selectCanUseAccounts, selectCanUseScripts, useStore } from "../../../sr
 import type { Chain, ScriptActionInfo } from "../../../src/store/types";
 import { colors, spacing } from "../../../src/theme/theme";
 import { Screen } from "../../../src/components/Screen";
-import { useOpenShareLink, useShareActions } from "../../../src/features/shares";
+import { useOpenShareLink, useShareActions, useShareUpdateAction } from "../../../src/features/shares";
 
 export default function ChainEditor() {
   const { chainId } = useLocalSearchParams<{ chainId: string }>();
@@ -39,6 +39,7 @@ export default function ChainEditor() {
   const profileKey = useStore((state) => state.activeProfileKey);
   const { local: canShare } = useShareActions();
   const openShareLink = useOpenShareLink();
+  const shareUpdate = useShareUpdateAction("chain", chainId);
   const chain = settings.scripts.chains?.[chainId];
   const [actions, setActions] = useState<ScriptActionInfo[] | null>(null);
   const [pickerIndex, setPickerIndex] = useState<number | null>(null);
@@ -147,6 +148,11 @@ export default function ChainEditor() {
     subtitle={active ? "Running" : `${chain.chains.length} ${chain.chains.length === 1 ? "action" : "actions"}`}
     back
     right={<>
+      {shareUpdate ? (
+        <IconButton bg="transparent" accessibilityLabel={shareUpdate.label} onPress={() => void shareUpdate.run()}>
+          <NativeIcon sf="arrow.triangle.2.circlepath" material="sync" size={21} color={shareUpdate.available ? colors.primary : colors.textMuted} />
+        </IconButton>
+      ) : null}
       {canShare ? (
         <IconButton
           bg="transparent"

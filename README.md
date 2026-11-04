@@ -69,19 +69,6 @@ Run the static check with:
 npm run typecheck
 ```
 
-## Monetization
-
-Free users may see one preloaded interstitial before a bot join or script start,
-limited to one per cold app session and one per ten minutes across launches. Ads fail
-open and are never loaded without the required consent. A RevenueCat-backed lifetime
-purchase removes these ads.
-
-Development builds use RevenueCat Test Store and Google's test ad units. Copy
-`.env.example` to `.env.local` when configuring a local native build.
-
-## Protocol
-
-The app uses the same signaling server, WebRTC data-channel framing, `messenger:assigned` address allocation, and versioned Messenger envelopes as the desktop remote web client. Desktop JNbot remains responsible for device authentication and profile-scoped authorization.
 
 ## License
 
