@@ -2,7 +2,7 @@
   "expo": {
     "name": "JNbot",
     "slug": "jnbot",
-    "version": "3.3.1",
+    "version": "3.4.0",
     "description": "JNbot for iOS and Android. Run and automate Minecraft bots directly on your phone, or connect to your JNbot desktop to control it from anywhere. NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

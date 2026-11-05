@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { colors, font, radii, spacing, palette } from '../theme/theme';
+import { NativeIcon } from './NativeIcon';
 
 // ── Text ─────────────────────────────────────────────────────────────────────
 
@@ -245,6 +246,23 @@ export function IconButton({
   );
 }
 
+/** Primary "add / create" action for screen headers. */
+export function AddButton({
+  onPress,
+  disabled,
+  accessibilityLabel,
+}: {
+  onPress: () => void;
+  disabled?: boolean;
+  accessibilityLabel: string;
+}) {
+  return (
+    <IconButton bg={colors.primary} accessibilityLabel={accessibilityLabel} disabled={disabled} onPress={onPress}>
+      <NativeIcon sf="plus" material="add" size={24} color={colors.primaryOn} />
+    </IconButton>
+  );
+}
+
 // ── Section header ───────────────────────────────────────────────────────────
 
 export function SectionHeader({
@@ -277,13 +295,16 @@ export function EmptyState({
   icon,
   title,
   subtitle,
+  compact,
 }: {
   icon?: React.ReactNode;
   title: string;
   subtitle?: string;
+  /** Tighter padding for use inside a card/group. */
+  compact?: boolean;
 }) {
   return (
-    <View style={styles.empty}>
+    <View style={[styles.empty, compact && styles.emptyCompact]}>
       {icon}
       <Txt variant="heading" style={{ marginTop: spacing.md, textAlign: 'center' }}>
         {title}
@@ -318,7 +339,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: radii.pill,
   },
-  badgeText: { fontSize: 11, fontWeight: '600' },
+  badgeText: { fontSize: 12, fontWeight: '600' },
   btn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -353,13 +374,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  countText: { color: colors.textMuted, fontSize: 11, fontWeight: '700' },
+  countText: { color: colors.textMuted, fontSize: 12, fontWeight: '700' },
   empty: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 56,
     paddingHorizontal: spacing.xl,
   },
+  emptyCompact: { paddingVertical: spacing.xl },
   divider: {
     height: 1,
     backgroundColor: colors.borderSubtle,

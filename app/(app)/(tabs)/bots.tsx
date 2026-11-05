@@ -179,8 +179,8 @@ export default function Bots() {
                 color={colors.textFaint}
               />
             }
-            title="No matching bots"
-            subtitle="Join with an alt or try a different filter."
+            title={query ? "No matching bots" : "No bots yet"}
+            subtitle={query ? "Try a different search." : "Join with an account to see it here."}
           />
         }
       />
@@ -193,10 +193,8 @@ export default function Bots() {
         <SafeAreaView style={styles.sheetSafeArea}>
           <KeyboardAvoidingView style={styles.sheet} behavior={Platform.OS === "ios" ? "padding" : "height"}>
             <View style={styles.sheetHeader}>
-              <View>
-                <Txt variant="heading">Join bot</Txt>
-              </View>
-              <Pressable onPress={() => setShowJoin(false)}>
+              <Txt variant="heading">Join bot</Txt>
+              <Pressable accessibilityRole="button" accessibilityLabel="Close" hitSlop={12} onPress={() => setShowJoin(false)}>
                 <Ionicons name="close" size={25} color={colors.text} />
               </Pressable>
             </View>
@@ -274,20 +272,6 @@ export default function Bots() {
 const styles = StyleSheet.create({
   swipeCard: { borderRadius: radii.lg, borderCurve: "continuous", overflow: "hidden" },
   search: { marginHorizontal: spacing.lg },
-  filters: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-  },
-  filter: {
-    height: 28,
-    justifyContent: 'center',
-    paddingHorizontal: 9,
-    borderRadius: radii.pill,
-    backgroundColor: colors.surface,
-  },
-  selected: { backgroundColor: colors.primary },
   list: { padding: spacing.lg, paddingBottom: spacing.xxl },
   sheet: {
     flex: 1,

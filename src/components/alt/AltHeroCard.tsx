@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
   },
   tagText: {
-    fontSize: 11,
+    fontSize: 12,
     color: colors.textMuted,
   },
 });

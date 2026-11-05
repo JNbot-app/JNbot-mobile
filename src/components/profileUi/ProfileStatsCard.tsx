@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
     lineHeight: 26,
   },
   tileLabel: {
-    fontSize: 11,
+    fontSize: 12,
     textAlign: 'center',
   },
   grid: {

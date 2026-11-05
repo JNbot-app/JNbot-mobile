@@ -1,7 +1,7 @@
 import React from "react";
 import { FlatList, Pressable, StyleSheet, View } from "react-native";
 import { NativeIcon } from "../NativeIcon";
-import { Divider, EmptyState, IconButton, Txt } from "../ui";
+import { Divider, EmptyState, Txt } from "../ui";
 import type { Chain } from "../../store/types";
 import { chainPluginId } from "../../generated/client-contract/chains";
 import { formatDuration } from "../../generated/client-contract/cooldowns";
@@ -68,10 +68,6 @@ export function ChainList({
       }
     />
   );
-}
-
-export function CreateChainButton({ onPress }: { onPress: () => void }) {
-  return <IconButton bg="transparent" accessibilityLabel="Create chain" onPress={onPress}><NativeIcon sf="plus" material="add" size={24} color={colors.text} /></IconButton>;
 }
 
 const styles = StyleSheet.create({

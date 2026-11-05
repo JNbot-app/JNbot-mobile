@@ -130,7 +130,7 @@ export default function Dashboard() {
                 ))}
               </View>
             ) : (
-              <View style={styles.group}><EmptyState icon={<NativeIcon sf="cpu" material="smart-toy" size={34} color={colors.textFaint} />} title="No bots online" subtitle="Join an account when you’re ready to start." /></View>
+              <View style={styles.group}><EmptyState compact icon={<NativeIcon sf="cpu" material="smart-toy" size={28} color={colors.textFaint} />} title="No bots online" subtitle="Join an account when you’re ready to start." /></View>
             )}
           </>
         )}
@@ -164,7 +164,7 @@ export default function Dashboard() {
                           <Txt variant="heading" numberOfLines={1}>{script.name}</Txt>
                           <Txt variant="muted">{botCount} bot{botCount === 1 ? '' : 's'}{pct !== null ? ` · ${Math.round(pct * 100)}%` : ''}</Txt>
                         </View>
-                        <Txt variant="muted" style={{ color: colors.success }}>Running</Txt>
+                        <Txt variant="muted" style={styles.runningLabel}>Running</Txt>
                         <NativeIcon sf="chevron.right" material="chevron-right" size={18} color={colors.textFaint} />
                       </Pressable>
                     </SwipeAction>
@@ -172,7 +172,7 @@ export default function Dashboard() {
                 })}
               </View>
             ) : (
-              <View style={styles.group}><EmptyState icon={<NativeIcon sf="point.3.connected.trianglepath.dotted" material="account-tree" size={34} color={colors.textFaint} />} title="No scripts running" subtitle="Choose a script or plugin to start work." /></View>
+              <View style={styles.group}><EmptyState compact icon={<NativeIcon sf="point.3.connected.trianglepath.dotted" material="account-tree" size={28} color={colors.textFaint} />} title="No scripts running" subtitle="Choose a script or plugin to start work." /></View>
             )}
           </>
         )}
@@ -219,7 +219,7 @@ function SummaryCell({
         <Txt variant="none" style={styles.summaryLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
           {label.toUpperCase()}
         </Txt>
-        <View style={[styles.summaryIcon]}>{icon}</View>
+        <View style={styles.summaryIcon}>{icon}</View>
       </View>
       <Txt
         variant="none"
@@ -236,28 +236,22 @@ function SummaryCell({
   );
 }
 
-function TextAction({ label, onPress }: { label: string; onPress: () => void }) {
-  return <Pressable accessibilityRole="button" accessibilityLabel="View all" hitSlop={8} onPress={onPress} style={styles.textAction}><Txt style={styles.textActionLabel}>{label}</Txt><NativeIcon sf="chevron.right" material="chevron-right" size={18} color={colors.primary} /></Pressable>;
-}
-
 const styles = StyleSheet.create({
   scroll: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xxxl, gap: 0 },
   summary: { flexDirection: 'row', gap: spacing.sm },
   summaryCell: { flex: 1, minWidth: 0, minHeight: 94, justifyContent: 'space-between', gap: spacing.sm, padding: spacing.md, backgroundColor: colors.bgElevated, borderRadius: radii.xl, borderCurve: 'continuous', borderWidth: 1, borderColor: colors.borderSubtle },
   summaryHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.xs },
   summaryIcon: { width: 22, height: 22, borderRadius: radii.pill, backgroundColor: colors.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
-  summaryDot: { width: 7, height: 7, borderRadius: radii.pill, backgroundColor: colors.textFaint },
   summaryValue: { color: colors.text, fontSize: 28, fontWeight: '700', letterSpacing: -0.7, fontVariant: ['tabular-nums'] },
   summaryValueReady: { color: colors.success },
   summaryUnit: { color: colors.textMuted, fontSize: 18, fontWeight: '600', letterSpacing: 0 },
-  summaryLabel: { flex: 1, color: colors.textMuted, fontSize: 10, fontWeight: '700', letterSpacing: 0.8 },
+  summaryLabel: { flex: 1, color: colors.textMuted, fontSize: 11, fontWeight: '700', letterSpacing: 0.8 },
   group: { backgroundColor: colors.surface, borderRadius: radii.lg, borderCurve: 'continuous', borderWidth: StyleSheet.hairlineWidth, borderColor: colors.borderSubtle, overflow: 'hidden' },
   row: { minHeight: 68, flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
   rowBorder: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderSubtle },
   rowPressed: { backgroundColor: colors.surfaceHover },
   swipeRow: { backgroundColor: colors.surface },
+  runningLabel: { color: colors.success, fontWeight: '600' },
   rowCopy: { flex: 1, minWidth: 0, gap: 2 },
   rowIcon: { width: 42, height: 42, borderRadius: radii.md, borderCurve: 'continuous', backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
-  textAction: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 2 },
-  textActionLabel: { color: colors.primary, fontWeight: '600' },
 });

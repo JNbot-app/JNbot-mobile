@@ -533,7 +533,7 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   tagChipCount: {
-    fontSize: 10,
+    fontSize: 12,
     color: colors.textMuted,
   },
   emptyContainer: {

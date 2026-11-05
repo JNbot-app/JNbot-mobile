@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Screen } from '../../../src/components/Screen';
-import { Button, EmptyState, IconButton, StatusDot, Txt } from '../../../src/components/ui';
+import { AddButton, Button, EmptyState, IconButton, StatusDot, Txt } from '../../../src/components/ui';
 import { MCAvatar } from '../../../src/components/MCAvatar';
 import { SearchField } from '../../../src/components/SearchField';
 import { NativeIcon } from '../../../src/components/NativeIcon';
@@ -120,9 +120,7 @@ export default function Alts() {
           <IconButton accessibilityLabel="Import accounts" bg="transparent" onPress={() => setImportOpen(true)}>
             <NativeIcon sf="square.and.arrow.down" material="download" size={21} color={colors.text} />
           </IconButton>
-          <IconButton accessibilityLabel="Add account" bg={colors.primary} onPress={() => router.push('/(app)/alt/editor')}>
-            <NativeIcon sf="plus" material="add" size={24} color={colors.primaryOn} />
-          </IconButton>
+          <AddButton accessibilityLabel="Add account" onPress={() => router.push('/(app)/alt/editor')} />
         </>
       ) : undefined}
     >
@@ -205,7 +203,13 @@ const AltRow = memo(function AltRow({
   last: boolean;
   onSelect: (username: string) => void;
 }) {
-  const detail = `${ranks} rank${ranks === 1 ? '' : 's'} · ${gkits} gkit${gkits === 1 ? '' : 's'}`;
+  const detail =
+    [
+      ranks > 0 && `${ranks} rank${ranks === 1 ? '' : 's'}`,
+      gkits > 0 && `${gkits} gkit${gkits === 1 ? '' : 's'}`,
+    ]
+      .filter(Boolean)
+      .join(' · ');
 
   return (
     <Pressable
@@ -230,9 +234,9 @@ const AltRow = memo(function AltRow({
           {alt.data.premium ? <Ionicons name="diamond" size={13} color={colors.info} /> : null}
           {online ? <Txt variant="faint" style={styles.onlineLabel}>Online</Txt> : null}
         </View>
-        <Txt variant="faint" numberOfLines={1}>{detail}</Txt>
+        {detail ? <Txt variant="faint" numberOfLines={1}>{detail}</Txt> : null}
       </View>
-      {canManage ? <Ionicons name="chevron-forward" size={18} color={colors.textFaint} /> : null}
+      {canManage ? <NativeIcon sf="chevron.right" material="chevron-right" size={18} color={colors.textFaint} /> : null}
     </Pressable>
   );
 });
@@ -361,8 +365,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    height: 28,
-    paddingHorizontal: 10,
+    height: 32,
+    paddingHorizontal: 12,
     borderRadius: radii.pill,
     backgroundColor: colors.surface,
     borderWidth: StyleSheet.hairlineWidth,
@@ -377,8 +381,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    height: 28,
-    paddingHorizontal: 10,
+    height: 32,
+    paddingHorizontal: 12,
     borderRadius: radii.pill,
     backgroundColor: colors.surfaceAlt,
     borderWidth: StyleSheet.hairlineWidth,

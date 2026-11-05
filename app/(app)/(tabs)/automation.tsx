@@ -6,7 +6,7 @@ import { Screen } from "../../../src/components/Screen";
 import { CooldownList } from "../../../src/components/automation/CooldownList";
 import { SearchField } from "../../../src/components/SearchField";
 import { NativeIcon } from "../../../src/components/NativeIcon";
-import { EmptyState, IconButton, Txt } from "../../../src/components/ui";
+import { AddButton, EmptyState, IconButton, Txt } from "../../../src/components/ui";
 import { AutomationItemCard } from "../../../src/components/automation/AutomationItemCard";
 import { AutomationTabs } from "../../../src/components/automation/AutomationTabs";
 import { useAutomationDrawer } from "../../../src/components/automation/AutomationDrawer";
@@ -21,7 +21,7 @@ import {
 import type { Cooldown, MacroInfo } from "../../../src/store/types";
 import { colors, radii, spacing } from "../../../src/theme/theme";
 import { BottomSheet } from '../../../src/components/BottomSheet';
-import { ChainList, CreateChainButton } from '../../../src/components/chains/ChainList';
+import { ChainList } from '../../../src/components/chains/ChainList';
 import { useClient } from '../../../src/net/ConnectionProvider';
 import { actions } from '../../../src/store/store';
 import { useFeedback } from '../../../src/components/AppFeedback';
@@ -386,13 +386,13 @@ export default function Automation() {
     <Screen
       title="Automation"
       subtitle={section === 'plugins' && folder !== '__all__' ? `${rows.length} in ${folder === '__none__' ? 'Unorganized' : folder}` : `${count} ${section}`}
-      right={section === "chains" ? <CreateChainButton onPress={() => void createChain()} /> : section === "plugins" ? <IconButton bg="transparent" accessibilityLabel="Add plugin" onPress={() => setPluginMenuOpen(true)}>
-        <NativeIcon sf="plus" material="add" size={24} color={colors.text} />
-      </IconButton> : section === "cooldowns" ? <IconButton bg="transparent" accessibilityLabel="Schedule script" disabled={!isProfileReady || !client || (!canUseScripts && !canUsePlugins) || !canUseAccounts} onPress={() => setCreatingSchedule(true)}>
-        <NativeIcon sf="plus" material="add" size={24} color={colors.text} />
-      </IconButton> : section === "triggers" ? <IconButton bg="transparent" accessibilityLabel="Add trigger" disabled={!isProfileReady || !client} onPress={() => triggerEditor.open()}>
-        <NativeIcon sf="plus" material="add" size={24} color={colors.text} />
-      </IconButton> : undefined}
+      right={
+        section === "chains" ? <AddButton accessibilityLabel="Create chain" onPress={() => void createChain()} />
+        : section === "plugins" ? <AddButton accessibilityLabel="Add plugin" onPress={() => setPluginMenuOpen(true)} />
+        : section === "cooldowns" ? <AddButton accessibilityLabel="Schedule script" disabled={!isProfileReady || !client || (!canUseScripts && !canUsePlugins) || !canUseAccounts} onPress={() => setCreatingSchedule(true)} />
+        : section === "triggers" ? <AddButton accessibilityLabel="Add trigger" disabled={!isProfileReady || !client} onPress={() => triggerEditor.open()} />
+        : undefined
+      }
     >
       <AutomationTabs
         sections={availableSections}

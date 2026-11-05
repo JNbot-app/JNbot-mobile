@@ -379,7 +379,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
   },
   tabBadgeText: {
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: '700',
     color: colors.primary,
   },

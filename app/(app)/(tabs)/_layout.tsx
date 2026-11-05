@@ -58,7 +58,7 @@ export default function TabLayout() {
     >
       {tab("dashboard", "Overview", "square.grid.2x2", "grid-view")}
       {tab("bots", "Bots", "cpu", "smart-toy", hidden("bots"))}
-      {tab("automation", "Scripts", "point.3.connected.trianglepath.dotted", "account-tree", hidden("automation"))}
+      {tab("automation", "Automation", "point.3.connected.trianglepath.dotted", "account-tree", hidden("automation"))}
       {tab("alts", "Accounts", "person.2", "people-outline", hidden("alts"))}
     </NativeTabs>
   );

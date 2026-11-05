@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
   tiles: { flexDirection: 'row', gap: spacing.sm },
   tile: { flex: 1, minWidth: 0, gap: 2, paddingVertical: spacing.sm, paddingHorizontal: spacing.md, borderRadius: radii.md, borderCurve: 'continuous', backgroundColor: colors.surfaceAlt },
   tileActive: { backgroundColor: colors.primarySoft },
-  tileLabel: { color: colors.textMuted, fontSize: 10, fontWeight: '700', letterSpacing: 0.8 },
+  tileLabel: { color: colors.textMuted, fontSize: 11, fontWeight: '700', letterSpacing: 0.8 },
   tileLabelActive: { color: colors.primary },
   tileValue: { color: colors.text, fontSize: 20, fontWeight: '700', letterSpacing: -0.4, fontVariant: ['tabular-nums'] },
   chart: { height: CHART_HEIGHT, flexDirection: 'row', gap: spacing.sm, marginTop: spacing.xs },
