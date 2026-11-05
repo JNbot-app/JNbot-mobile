@@ -71,7 +71,7 @@ export default function Dashboard() {
   }, [activeProfileKey, selectProfile]);
 
   return (
-    <Screen title="Overview" subtitle={profileReady ? profile?.name ?? 'Your JNbot network' : 'Loading profile…'} showNotifications gradient>
+    <Screen tabBar title="Overview" subtitle={profileReady ? profile?.name ?? 'Your JNbot network' : 'Loading profile…'} showNotifications gradient>
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={styles.scroll}

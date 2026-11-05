@@ -119,7 +119,7 @@ export default function Bots() {
   };
   if (!canUseActiveBots) {
     return (
-      <Screen title="Bots" subtitle="Active bots">
+      <Screen tabBar title="Bots" subtitle="Active bots">
         <EmptyState
           icon={<Ionicons name="lock-closed-outline" size={32} color={colors.textFaint} />}
           title="Active Bots Disabled"

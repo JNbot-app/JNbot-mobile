@@ -32,7 +32,7 @@
     },
     "android": {
       "package": "com.jnbot.app",
-      "versionCode": 27,
+      "versionCode": 29,
       "adaptiveIcon": {
         "backgroundColor": "#08090A",
         "foregroundImage": "./assets/android-icon-foreground.png",

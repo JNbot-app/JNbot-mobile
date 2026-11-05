@@ -36,9 +36,6 @@ import {
   type PluginFolderPreferences,
 } from '../../../src/features/plugins/folders';
 import {
-  DROP_ROW_HEIGHT,
-  DraggablePluginRow,
-  FolderDropTray,
   FolderNameSheet,
   FolderPickerSheet,
   FolderStrip,
@@ -124,11 +121,7 @@ export default function Automation() {
   const [folder, setFolder] = useState('__all__');
   const [preferences, setPreferences] = useState<PluginFolderPreferences>({ extraFolders: [], sortOrder: 'date' });
   const [preferencesLoaded, setPreferencesLoaded] = useState(false);
-  const [draggingPlugin, setDraggingPlugin] = useState<MacroInfo | null>(null);
-  const [activeDropId, setActiveDropId] = useState<string | null>(null);
   const [movePlugin, setMovePlugin] = useState<MacroInfo | null>(null);
-  const activeDropRef = useRef<string | null>(null);
-  const dropTopRef = useRef<number | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -186,12 +179,6 @@ export default function Automation() {
     { id: '__none__', label: 'Unorganized', folder: null, count: counts.unorganized },
     ...folders.map((name) => ({ id: name, label: name, folder: name, count: counts.folders[name] ?? 0 })),
   ], [counts.folders, counts.unorganized, folders]);
-  const dropChoices = useMemo<FolderChoice[]>(() => {
-    const visibleFolders = moveChoices.slice(0, 5);
-    return moveChoices.length > visibleFolders.length
-      ? [...visibleFolders, { id: '__more__', label: 'More folders…', folder: null }]
-      : visibleFolders;
-  }, [moveChoices]);
 
   useEffect(() => {
     if (folder !== '__all__' && folder !== '__none__' && !folders.includes(folder)) setFolder('__all__');
@@ -228,44 +215,7 @@ export default function Automation() {
     void saveMetadata(next, target ? `Moved to ${target}` : 'Moved to Unorganized');
   }, [pluginMetadata, saveMetadata]);
 
-  const beginDrag = useCallback((plugin: MacroInfo) => {
-    activeDropRef.current = null;
-    dropTopRef.current = null;
-    setActiveDropId(null);
-    setDraggingPlugin(plugin);
-  }, []);
-
-  const updateDrag = useCallback((absoluteY: number) => {
-    const top = dropTopRef.current;
-    const index = top === null ? -1 : Math.floor((absoluteY - top) / DROP_ROW_HEIGHT);
-    const next = index >= 0 && index < dropChoices.length ? dropChoices[index].id : null;
-    if (activeDropRef.current === next) return;
-    activeDropRef.current = next;
-    setActiveDropId(next);
-  }, [dropChoices]);
-
-  const finishDrag = useCallback((plugin: MacroInfo) => {
-    const targetId = activeDropRef.current;
-    const choice = dropChoices.find((item) => item.id === targetId);
-    setDraggingPlugin(null);
-    setActiveDropId(null);
-    activeDropRef.current = null;
-    if (!choice || choice.id === '__more__') {
-      setMovePlugin(plugin);
-      return;
-    }
-    moveToFolder(plugin, choice.folder);
-  }, [dropChoices, moveToFolder]);
-
-  const cancelDrag = useCallback((plugin: MacroInfo) => {
-    setDraggingPlugin((current) => current?.pluginId === plugin.pluginId ? null : current);
-    setActiveDropId(null);
-    activeDropRef.current = null;
-  }, []);
-
-  const setMeasuredDropTop = useCallback((top: number) => {
-    dropTopRef.current = top;
-  }, []);
+  const openMoveSheet = useCallback((item: MacroInfo | ProfileScriptInfo) => setMovePlugin(item as MacroInfo), []);
 
   const createChain = useCallback(() => {
     if (canUseScripts) router.push({ pathname: '/(app)/chains/settings/[chainId]', params: { chainId: 'new' } });
@@ -336,22 +286,12 @@ export default function Automation() {
           isFirst={index === 0}
           isLast={index === rows.length - 1}
           onPress={handleOpenItem}
+          onLongPress={isPlugin && (folders.length > 0 || Boolean(pluginMetadata[plugin.pluginId]?.folder)) ? openMoveSheet : undefined}
         />
       );
-      return isPlugin ? (
-        <DraggablePluginRow
-          plugin={plugin}
-          enabled={folders.length > 0 || Boolean(pluginMetadata[plugin.pluginId]?.folder)}
-          onStart={beginDrag}
-          onMove={updateDrag}
-          onFinish={finishDrag}
-          onCancel={cancelDrag}
-        >
-          {card}
-        </DraggablePluginRow>
-      ) : card;
+      return card;
     },
-    [section, installedMap, runningIds, optionErrorIds, rows.length, handleOpenItem, folders.length, pluginMetadata, beginDrag, updateDrag, finishDrag, cancelDrag],
+    [section, installedMap, runningIds, optionErrorIds, rows.length, handleOpenItem, openMoveSheet, folders.length, pluginMetadata],
   );
 
   useEffect(() => {
@@ -372,7 +312,7 @@ export default function Automation() {
   const count = section === "scripts" ? profileScripts.length : section === "plugins" ? installed.length : section === "chains" ? chains.length : section === "triggers" ? triggerCount : cooldowns.length;
   if (!canUseScripts && !canUsePlugins) {
     return (
-      <Screen title="Scripts & Plugins" subtitle="Automations">
+      <Screen tabBar title="Scripts & Plugins" subtitle="Automations">
         <EmptyState
           icon={<NativeIcon sf="lock" material="lock-outline" size={32} color={colors.textFaint} />}
           title="Automations Disabled"
@@ -401,7 +341,6 @@ export default function Automation() {
           setSection(nextSection);
           closeSchedule();
           setQuery("");
-          if (nextSection !== 'plugins') setDraggingPlugin(null);
         }}
       />
 
@@ -413,7 +352,7 @@ export default function Automation() {
         runningIds={runningIds}
         onCreate={() => void createChain()}
         onOpen={(chain) => router.push({ pathname: '/(app)/chains/[chainId]', params: { chainId: chain.id } })}
-      /> : section === "triggers" ? <TriggerList editor={triggerEditor} /> : section === "cooldowns" ? <CooldownList creatingSchedule={creatingSchedule} onCloseSchedule={closeSchedule} /> : <FlatList<any>
+      /> : section === "triggers" ? <TriggerList editor={triggerEditor} /> : section === "cooldowns" ? <CooldownList creatingSchedule={creatingSchedule} onCloseSchedule={closeSchedule} onCreate={isProfileReady && client && canUseAccounts ? () => setCreatingSchedule(true) : undefined} /> : <FlatList<any>
         style={styles.listView}
         contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"
@@ -435,13 +374,12 @@ export default function Automation() {
         renderItem={renderItem}
         ListEmptyComponent={<View>
           <EmptyState
-            icon={<NativeIcon sf="magnifyingglass" material="search-off" size={40} color={colors.textFaint} />}
-            title={query ? "Nothing found" : section === "plugins" && folder !== '__all__' ? "Folder is empty" : section === "plugins" ? "No plugins installed" : "No scripts available"}
-            subtitle={query ? "Try a different search." : section === "plugins" && folder !== '__all__' ? "Long-press a plugin and drag it here." : section === "plugins" ? "Import a .jnp plugin file to run it on this device." : "Choose another profile to see its scripts."}
+            icon={query ? <NativeIcon sf="magnifyingglass" material="search-off" size={40} color={colors.textFaint} /> : section === "plugins" ? <NativeIcon sf="puzzlepiece.extension" material="extension" size={40} color={colors.textFaint} /> : <NativeIcon sf="doc.text" material="description" size={40} color={colors.textFaint} />}
+            title={query ? "Nothing found" : section === "plugins" && folder !== '__all__' ? "Folder is empty" : section === "plugins" ? "No plugins installed" : "No scripts yet"}
+            actionLabel={!query && section === "plugins" && folder === '__all__' && installed.length === 0 ? "Add a plugin" : undefined}
+            onAction={() => setPluginMenuOpen(true)}
+            subtitle={query ? "Try a different search." : section === "plugins" && folder !== '__all__' ? "Long-press a plugin to move it here." : section === "plugins" ? "Plugins add new things your bots can do. Browse the marketplace or import a .jnp file to get started." : "Scripts are the automations that run on your accounts. This profile has none; choose another profile to see its scripts."}
           />
-          {!query && section === "plugins" && folder === '__all__' && installed.length === 0 ? <Pressable accessibilityRole="button" onPress={() => setPluginMenuOpen(true)} style={styles.emptyAction}>
-            <Txt variant="heading" style={styles.emptyActionLabel}>Add a plugin</Txt>
-          </Pressable> : null}
         </View>}
       />}
       <BottomSheet visible={pluginMenuOpen} onClose={() => setPluginMenuOpen(false)} accessibilityLabel="Add plugin">
@@ -481,7 +419,6 @@ export default function Automation() {
           <SortMenuItem title="Name" selected={preferences.sortOrder === 'name'} onPress={() => { setPreferences((current) => ({ ...current, sortOrder: 'name' })); setSortMenuOpen(false); }} />
         </View>
       </BottomSheet>
-      {draggingPlugin ? <FolderDropTray plugin={draggingPlugin} choices={dropChoices} activeId={activeDropId} onTopChange={setMeasuredDropTop} /> : null}
     </Screen>
   );
 }
@@ -506,8 +443,6 @@ const styles = StyleSheet.create({
   listView: { flex: 1 },
   list: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl },
   search: { marginBottom: spacing.md },
-  emptyAction: { alignSelf: "center", minHeight: process.env.EXPO_OS === "android" ? 48 : 44, justifyContent: "center", paddingHorizontal: spacing.lg },
-  emptyActionLabel: { color: colors.primary },
   pluginMenu: { paddingHorizontal: spacing.md, paddingBottom: spacing.md },
   pluginMenuTitle: { paddingHorizontal: spacing.sm, paddingBottom: spacing.md },
   pluginMenuItem: { minHeight: process.env.EXPO_OS === 'android' ? 64 : 60, flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.sm, borderRadius: radii.md },

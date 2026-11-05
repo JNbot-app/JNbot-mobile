@@ -13,6 +13,7 @@ import {
   DESKTOP_DOWNLOAD_URL,
   DISCORD_URL,
   DOCUMENTATION_URL,
+  GITHUB_URL,
   openExternalUrl,
   PRIVACY_POLICY_URL,
   TERMS_OF_USE_URL,
@@ -32,6 +33,7 @@ const resources: Resource[] = [
   { title: 'Website', description: 'Explore JNbot', url: WEBSITE_URL, sf: 'globe', material: 'language' },
   { title: 'Documentation', description: 'Guides and references', url: DOCUMENTATION_URL, sf: 'book', material: 'menu-book' },
   { title: 'Download Desktop App', description: 'Get JNbot for your computer', url: DESKTOP_DOWNLOAD_URL, sf: 'desktopcomputer', material: 'desktop-windows' },
+  { title: 'GitHub', description: 'JNbot is open source', url: GITHUB_URL, sf: 'chevron.left.forwardslash.chevron.right', material: 'code' },
   { title: 'Join Discord Server', description: 'Connect with the community', url: DISCORD_URL, sf: 'bubble.left.and.bubble.right', material: 'forum' },
 ];
 

@@ -101,7 +101,7 @@ export default function Alts() {
 
   if (!canUseAccounts) {
     return (
-      <Screen title="Accounts" subtitle="Your accounts">
+      <Screen tabBar title="Accounts" subtitle="Your accounts">
         <EmptyState
           icon={<Ionicons name="lock-closed-outline" size={32} color={colors.textFaint} />}
           title="Accounts Disabled"

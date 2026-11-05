@@ -415,27 +415,23 @@ export function subscribeTheme(listener: ThemeListener): () => void {
   };
 }
 
-function buildPaletteColorMap(palette: ThemeColors): Map<string, keyof ThemeColors> {
-  const map = new Map<string, keyof ThemeColors>();
+const isNeutral = (clean: string) => clean === '#ffffff' || clean === '#fff' || clean === '#000000' || clean === '#000';
+
+// First token wins when palettes reuse one value (e.g. gold primary === warning),
+// so the semantic token declared first (primary) is preferred over later ones.
+function addPaletteColors(map: Map<string, keyof ThemeColors>, palette: ThemeColors) {
   for (const [token, color] of Object.entries(palette)) {
     const clean = color.toLowerCase().trim();
-    if (clean !== '#ffffff' && clean !== '#fff' && clean !== '#000000' && clean !== '#000') {
-      map.set(clean, token as keyof ThemeColors);
-    }
+    if (!isNeutral(clean) && !map.has(clean)) map.set(clean, token as keyof ThemeColors);
   }
   return map;
 }
 
+const buildPaletteColorMap = (palette: ThemeColors) => addPaletteColors(new Map(), palette);
+
 const darkColorMap = buildPaletteColorMap(darkPalette);
 const allPalettesColorMap = new Map<string, keyof ThemeColors>(darkColorMap);
-for (const palette of Object.values(themePalettes)) {
-  for (const [token, color] of Object.entries(palette)) {
-    const clean = color.toLowerCase().trim();
-    if (clean !== '#ffffff' && clean !== '#fff' && clean !== '#000000' && clean !== '#000' && !allPalettesColorMap.has(clean)) {
-      allPalettesColorMap.set(clean, token as keyof ThemeColors);
-    }
-  }
-}
+for (const palette of Object.values(themePalettes)) addPaletteColors(allPalettesColorMap, palette);
 
 let activeColorMap = darkColorMap;
 
@@ -445,9 +441,7 @@ function findTokenForValue(val: string): keyof ThemeColors | null {
     return null;
   }
   const clean = val.toLowerCase().trim();
-  if (clean === '#ffffff' || clean === '#fff' || clean === '#000000' || clean === '#000') {
-    return null;
-  }
+  if (isNeutral(clean)) return null;
   return activeColorMap.get(clean) ?? darkColorMap.get(clean) ?? allPalettesColorMap.get(clean) ?? null;
 }
 

@@ -296,10 +296,14 @@ export function EmptyState({
   title,
   subtitle,
   compact,
+  actionLabel,
+  onAction,
 }: {
   icon?: React.ReactNode;
   title: string;
   subtitle?: string;
+  actionLabel?: string;
+  onAction?: () => void;
   /** Tighter padding for use inside a card/group. */
   compact?: boolean;
 }) {
@@ -310,10 +314,15 @@ export function EmptyState({
         {title}
       </Txt>
       {subtitle && (
-        <Txt variant="muted" style={{ marginTop: 6, textAlign: 'center', maxWidth: 260 }}>
+        <Txt variant="muted" style={{ marginTop: 6, textAlign: 'center', maxWidth: 300 }}>
           {subtitle}
         </Txt>
       )}
+      {onAction && actionLabel ? (
+        <Pressable accessibilityRole="button" onPress={onAction} style={styles.emptyAction}>
+          <Txt variant="heading" style={{ color: colors.primary }}>{actionLabel}</Txt>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -381,6 +390,7 @@ const styles = StyleSheet.create({
     paddingVertical: 56,
     paddingHorizontal: spacing.xl,
   },
+  emptyAction: { marginTop: spacing.sm, minHeight: process.env.EXPO_OS === 'android' ? 48 : 44, justifyContent: 'center', paddingHorizontal: spacing.lg },
   emptyCompact: { paddingVertical: spacing.xl },
   divider: {
     height: 1,
