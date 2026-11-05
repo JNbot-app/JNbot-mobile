@@ -40,21 +40,27 @@ export function useShareUpdateAction(kind: ShareKind, localRef: string) {
   if (!share || mode !== "local") return undefined;
 
   const available = shareUpdateAvailable(share, appVersion);
-  const run = async () => {
+  // Resolves to a status message, or undefined once the update screen is opened. `silent` skips
+  // the toast for callers that show the message themselves (a toast hides behind modals).
+  const run = async (options?: { silent?: boolean }): Promise<string | undefined> => {
     try {
       const state = available ? undefined : await shareAction<ShareState>("SHARE_CHECK_UPDATES", share.id);
       if (state) useShares.setState(state);
       const latest = state?.installed[share.id];
       if (available || (latest && shareUpdateAvailable(latest, state.appVersion))) {
         router.push({ pathname: "/(app)/share/[id]", params: { id: share.id } });
-      } else {
-        showMessage(`This ${SHARE_KIND_LABELS[kind].toLowerCase()} is up to date`, "success");
+        return undefined;
       }
+      const message = `This ${SHARE_KIND_LABELS[kind].toLowerCase()} is up to date`;
+      if (!options?.silent) showMessage(message, "success");
+      return message;
     } catch (cause) {
-      showMessage(cause instanceof Error ? cause.message : String(cause), "error");
+      const message = cause instanceof Error ? cause.message : String(cause);
+      if (!options?.silent) showMessage(message, "error");
+      return message;
     }
   };
-  return { available, run, label: available ? `Update from ${share.ownerName}` : "Check for updates" };
+  return { available, run, ownerName: share.ownerName, label: available ? `Update from ${share.ownerName}` : "Check for updates" };
 }
 
 const MUTATIONS = new Set<ShareAction>([

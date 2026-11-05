@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleProp, StyleSheet, TextStyle, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { NativeIcon } from './NativeIcon';
 import { colors, radii, spacing } from '../theme/theme';
 import { Badge, IconButton, PressableCard, StatusDot, Txt } from './ui';
 import { MCAvatar } from './MCAvatar';
@@ -119,7 +120,6 @@ export function BotCard({
           <BotStatusBadge bot={bot} />
         </View>
         <Txt variant="muted" numberOfLines={1}>
-          <Ionicons name="flash" size={12} color={colors.textFaint} />{' '}
           {bot.SCRIPT_NAME || bot.script || 'Idle'}
         </Txt>
         {bot.host ? (
@@ -129,7 +129,7 @@ export function BotCard({
           </Txt>
         ) : null}
       </View>
-      <Ionicons name="chevron-forward" size={18} color={colors.textFaint} />
+      {onPress ? <NativeIcon sf="chevron.right" material="chevron-right" size={18} color={colors.textFaint} /> : null}
     </PressableCard>
   );
 }

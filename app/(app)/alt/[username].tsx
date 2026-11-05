@@ -268,9 +268,6 @@ export default function AltOverviewScreen() {
       onBack={goBack}
       edges={ALL_EDGES}
       title={alt.username}
-      right={canManage ? (
-        <Button title="Edit" small variant="secondary" icon={<Ionicons name="create-outline" size={16} color={colors.text} />} onPress={openEditor} />
-      ) : undefined}
     >
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -319,8 +316,8 @@ export default function AltOverviewScreen() {
         <View style={styles.actionSection}>
           {!isOnline && canJoin ? (
             <Button
-              title="Join Bot (Chat)"
-              variant="secondary"
+              title="Join bot"
+              icon={<Ionicons name="play" size={16} color={colors.primaryOn} />}
               loading={joining}
               onPress={() => void handleJoin()}
             />
@@ -329,17 +326,17 @@ export default function AltOverviewScreen() {
           {canManage ? (
             <View style={styles.manageButtonsRow}>
               <Button
+                title="Edit account"
+                variant="secondary"
+                style={styles.flexButton}
+                onPress={openEditor}
+              />
+              <Button
                 title="Remove"
                 variant="danger"
                 loading={deleting}
                 style={styles.flexButton}
                 onPress={handleRemove}
-              />
-              <Button
-                title="Edit account"
-                variant="primary"
-                style={styles.flexButton}
-                onPress={openEditor}
               />
             </View>
           ) : null}

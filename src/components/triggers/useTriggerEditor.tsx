@@ -61,7 +61,6 @@ export function useTriggerEditor() {
       onClose={() => setEditing(null)}
       onDelete={remove}
       onCheckUpdate={shareUpdate?.run}
-      checkUpdateLabel={shareUpdate?.label}
       onShare={
         canShare
           ? (trigger) => {

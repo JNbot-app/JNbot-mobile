@@ -222,7 +222,7 @@ export default function Profiles() {
                 <Txt variant="label" style={styles.sectionTitle}>Active profile</Txt>
                 <CurrentProfile
                   profile={activeProfile}
-                  detail={`${countLabel(summaries[activeProfile.id]?.bots ?? 0, 'bot')} · ${countLabel(summaries[activeProfile.id]?.scripts ?? 0, 'script')} · ${countLabel(alts.length, 'account')}`}
+                  detail={profileDetail(summaries[activeProfile.id], alts.length)}
                   onPress={() => router.replace('/(app)/dashboard')}
                   onShare={
                     localMode
@@ -243,7 +243,7 @@ export default function Profiles() {
                     <ProfileRow
                       key={profile.id}
                       profile={profile}
-                      detail={`${countLabel(summaries[profile.id]?.bots ?? 0, 'bot')} · ${countLabel(summaries[profile.id]?.scripts ?? 0, 'script')}`}
+                      detail={profileDetail(summaries[profile.id])}
                       busy={switching === profile.id}
                       disabled={Boolean(switching) && switching !== profile.id}
                       separated={index > 0}
@@ -342,6 +342,16 @@ function countLabel(count: number, singular: string) {
   return `${count} ${singular}${count === 1 ? '' : 's'}`;
 }
 
+/** Lists only non-zero counts so idle profiles don't repeat "0 bots · 0 scripts". */
+function profileDetail(summary: { bots?: number; scripts?: number } | undefined, accounts = 0) {
+  const parts = [
+    [summary?.bots ?? 0, 'bot'],
+    [summary?.scripts ?? 0, 'script'],
+    [accounts, 'account'],
+  ] as const;
+  return parts.filter(([count]) => count > 0).map(([count, noun]) => countLabel(count, noun)).join(' · ');
+}
+
 function TabButton({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
   return (
     <Pressable
@@ -389,7 +399,7 @@ function CurrentProfile({
             <Txt variant="faint" style={styles.currentBadgeText}>Current</Txt>
           </View>
         </View>
-        <Txt variant="muted" numberOfLines={2}>{detail}</Txt>
+        {detail ? <Txt variant="muted" numberOfLines={1}>{detail}</Txt> : null}
       </View>
       {onShare ? (
         <Pressable
@@ -437,11 +447,11 @@ function ProfileRow({
         <ProfileIcon uri={profile.icon} color={profile.color} size={44} />
         <View style={styles.profileCopy}>
           <Txt variant="heading" numberOfLines={1}>{profile.name}</Txt>
-          <Txt variant="faint" numberOfLines={1}>{detail}</Txt>
+          {detail ? <Txt variant="faint" numberOfLines={1}>{detail}</Txt> : null}
         </View>
         {busy ? (
           <ActivityIndicator color={colors.primary} size="small" />
-        ) : (
+        ) : onRemove ? null : (
           <Ionicons name="chevron-forward" size={19} color={colors.textFaint} />
         )}
       </Pressable>

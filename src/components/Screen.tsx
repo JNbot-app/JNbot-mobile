@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
-import type { Edge } from 'react-native-safe-area-context';
+import { useSafeAreaInsets, type Edge } from 'react-native-safe-area-context';
 import { ScreenSafeArea } from './ScreenSafeArea';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -19,6 +19,9 @@ import { DropboxStorageIndicator } from './DropboxStorageIndicator';
 
 type MenuPath = '/(app)/profiles' | '/(app)/plugin-marketplace' | '/(app)/logs' | '/(app)/settings' | '/(app)/shop' | '/(app)/info';
 
+// Material 3 NavigationBar height; the system inset is added on top.
+const ANDROID_TAB_BAR_HEIGHT = 80;
+
 export function Screen({
   title,
   subtitle,
@@ -31,6 +34,7 @@ export function Screen({
   gradient = false,
   menu = !back,
   edges = ['top', 'left', 'right'],
+  tabBar = false,
 }: {
   title: string;
   subtitle?: string;
@@ -44,9 +48,12 @@ export function Screen({
   /** Profile/notification menu in the header; hidden on pushed screens by default. */
   menu?: boolean;
   edges?: readonly Edge[];
+  /** Screen lives under the native tab bar. Android sizes tab content to the full window, so reserve the bar's height. */
+  tabBar?: boolean;
 }) {
   const { theme } = useTheme();
   const router = useRouter();
+  const { bottom } = useSafeAreaInsets();
   const { openNotifications } = useFeedback();
   const unread = useStore((state) => state.unread);
   const profile = useStore((state) => state.profiles.find((item) => item.id === state.activeProfileKey));
@@ -76,7 +83,7 @@ export function Screen({
           ) : null}
         </View>
       </View>
-      <View style={styles.body}>{children}</View>
+      <View style={[styles.body, tabBar && Platform.OS === 'android' && { paddingBottom: ANDROID_TAB_BAR_HEIGHT + bottom }]}>{children}</View>
     </ScreenSafeArea>
   );
 }

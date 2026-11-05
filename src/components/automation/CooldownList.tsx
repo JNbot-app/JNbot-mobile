@@ -40,7 +40,8 @@ function nextRunLabel(timestamp: number) {
   }).format(timestamp);
 }
 
-export function CooldownList({ creatingSchedule, onCloseSchedule }: {
+export function CooldownList({ creatingSchedule, onCloseSchedule, onCreate }: {
+  onCreate?: () => void;
   creatingSchedule: boolean;
   onCloseSchedule: () => void;
 }) {
@@ -99,7 +100,7 @@ export function CooldownList({ creatingSchedule, onCloseSchedule }: {
   return (
     <>
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.content}>
-        {!sorted.length && <EmptyState title="No cooldowns yet" subtitle="Schedule a script or let scripts create cooldowns." />}
+        {!sorted.length && <EmptyState icon={<NativeIcon sf="timer" material="timer" size={40} color={colors.textFaint} />} actionLabel="Schedule a script" onAction={onCreate} title="No cooldowns yet" subtitle="Cooldowns show when a script can run again. Tap + to schedule a script to start on its own, or let scripts create cooldowns for you." />}
         {sorted.map((cooldown) => {
           const scheduled = cooldown.kind === "schedule";
           const readyAt = reminderDueAt(cooldown);

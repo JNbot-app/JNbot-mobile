@@ -1,7 +1,7 @@
 import React from "react";
 import { FlatList, Pressable, StyleSheet, View } from "react-native";
 import { NativeIcon } from "../NativeIcon";
-import { Divider, EmptyState, IconButton, Txt } from "../ui";
+import { Divider, EmptyState, Txt } from "../ui";
 import type { Chain } from "../../store/types";
 import { chainPluginId } from "../../generated/client-contract/chains";
 import { formatDuration } from "../../generated/client-contract/cooldowns";
@@ -55,36 +55,26 @@ export function ChainList({
         </>
       )}
       ListEmptyComponent={
-        <View style={styles.emptyState}>
-          <EmptyState
-            icon={<NativeIcon sf="link" material="link" size={42} color={colors.textFaint} />}
-            title="No chains yet"
-            subtitle="Build a routine of actions to run in order for each selected account."
-          />
-          <Pressable accessibilityRole="button" onPress={onCreate} style={({ pressed }) => [styles.createButton, pressed && styles.rowPressed]}>
-            <Txt variant="heading" style={styles.createLabel}>Create a chain</Txt>
-          </Pressable>
-        </View>
+        <EmptyState
+          icon={<NativeIcon sf="link" material="link" size={40} color={colors.textFaint} />}
+          title="No chains yet"
+          subtitle="A chain runs several scripts or plugins one after another on each account you select, so a whole routine happens hands-free."
+          actionLabel="Create a chain"
+          onAction={onCreate}
+        />
       }
     />
   );
 }
 
-export function CreateChainButton({ onPress }: { onPress: () => void }) {
-  return <IconButton bg="transparent" accessibilityLabel="Create chain" onPress={onPress}><NativeIcon sf="plus" material="add" size={24} color={colors.text} /></IconButton>;
-}
-
 const styles = StyleSheet.create({
   list: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl },
-  emptyList: { flexGrow: 1, paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl, justifyContent: "center" },
-  emptyState: { alignItems: "center" },
-  createButton: { minHeight: process.env.EXPO_OS === "android" ? 48 : 44, justifyContent: "center", paddingHorizontal: spacing.lg, borderRadius: radii.md },
-  createLabel: { color: colors.primary },
+  emptyList: { flexGrow: 1, paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl },
   card: { minHeight: 76, padding: spacing.md, flexDirection: "row", alignItems: "center", gap: spacing.md, backgroundColor: colors.surface, borderLeftWidth: StyleSheet.hairlineWidth, borderRightWidth: StyleSheet.hairlineWidth, borderColor: colors.borderSubtle },
   cardFirst: { borderTopWidth: StyleSheet.hairlineWidth, borderTopLeftRadius: radii.lg, borderTopRightRadius: radii.lg, borderCurve: "continuous" },
   cardLast: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomLeftRadius: radii.lg, borderBottomRightRadius: radii.lg, borderCurve: "continuous" },
   rowPressed: { backgroundColor: colors.surfaceHover },
-  icon: { width: 42, height: 42, borderRadius: radii.md, backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center" },
+  icon: { width: 42, height: 42, borderRadius: radii.md, backgroundColor: colors.primarySoft, alignItems: "center" },
   copy: { flex: 1, minWidth: 0, gap: 3 },
   running: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 7, paddingVertical: 4, borderRadius: radii.pill, backgroundColor: colors.successSoft },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.success },

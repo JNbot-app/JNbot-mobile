@@ -39,6 +39,7 @@ import type {
   PluginImportDecision,
   PluginImportResult,
   InstanceImportInput,
+  InstanceImportResult,
 } from "../runtime/types";
 import type { ProfilePublication } from "../generated/client-contract/messaging/Protocol";
 import type { ShareState } from "../generated/client-contract/share";
@@ -460,36 +461,9 @@ export function ConnectionProvider({
     [selectProfile, shareAction],
   );
 
-  const importFullInstance = useCallback(
-    async (input: InstanceImportInput) => {
-      if (modeRef.current === "remote") await start({ kind: "local" }, "local");
-      const activeRuntime = runtimeRef.current;
-      if (!activeRuntime)
-        throw new Error("The phone runtime is not ready yet.");
-      const result = await activeRuntime.importFullInstance(input);
-      const localTarget: RuntimeTarget = { kind: 'local' };
-      await saveRuntimeTarget(localTarget);
-      setTarget(localTarget);
-      setHasTarget(true);
-      const preferredProfile =
-        result.bootstrap.appSettings?.server ||
-        result.bootstrap.jndata?.serverList?.[0] ||
-        null;
-      await hydrateBootstrap(result.bootstrap, true, preferredProfile);
-      if (preferredProfile) {
-        await selectProfile(preferredProfile);
-      }
-    },
-    [hydrateBootstrap, selectProfile, start],
-  );
-
-  const importDesktopInstance = useCallback(
-    async (pairingUrl: string, onStage: (stage: InstanceTransferStage, percent?: number) => void) => {
-      if (modeRef.current !== "local") await start({ kind: "local" }, "local");
-      const activeRuntime = runtimeRef.current;
-      if (!(activeRuntime instanceof LocalJNbotRuntime))
-        throw new Error("The phone runtime is not ready yet.");
-      const result = await importInstanceTransfer(pairingUrl, activeRuntime, onStage);
+  /** Moves the app onto the phone runtime that just imported an instance. */
+  const finishImport = useCallback(
+    async (activeRuntime: JNbotRuntime, result: InstanceImportResult) => {
       const localTarget: RuntimeTarget = { kind: "local" };
       await saveRuntimeTarget(localTarget);
       setTarget(localTarget);
@@ -499,9 +473,32 @@ export function ConnectionProvider({
         result.bootstrap.jndata?.serverList?.[0] ||
         null;
       await hydrateBootstrap(result.bootstrap, true, preferredProfile);
+      useShares.setState(await activeRuntime.shareAction<ShareState>("SHARE_STATE", undefined));
       if (preferredProfile) await selectProfile(preferredProfile);
     },
-    [hydrateBootstrap, selectProfile, start],
+    [hydrateBootstrap, selectProfile],
+  );
+
+  const importFullInstance = useCallback(
+    async (input: InstanceImportInput) => {
+      if (modeRef.current === "remote") await start({ kind: "local" }, "local");
+      const activeRuntime = runtimeRef.current;
+      if (!activeRuntime)
+        throw new Error("The phone runtime is not ready yet.");
+      await finishImport(activeRuntime, await activeRuntime.importFullInstance(input));
+    },
+    [finishImport, start],
+  );
+
+  const importDesktopInstance = useCallback(
+    async (pairingUrl: string, onStage: (stage: InstanceTransferStage, percent?: number) => void) => {
+      if (modeRef.current !== "local") await start({ kind: "local" }, "local");
+      const activeRuntime = runtimeRef.current;
+      if (!(activeRuntime instanceof LocalJNbotRuntime))
+        throw new Error("The phone runtime is not ready yet.");
+      await finishImport(activeRuntime, await importInstanceTransfer(pairingUrl, activeRuntime, onStage));
+    },
+    [finishImport, start],
   );
 
   const disconnect = useCallback(async () => {

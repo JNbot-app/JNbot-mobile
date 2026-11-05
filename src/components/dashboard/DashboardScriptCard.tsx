@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
   },
   activeBadgeText: {
     color: colors.success,
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: font.weight.semibold,
   },
   bottomRow: {

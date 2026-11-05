@@ -36,7 +36,6 @@ type Props = {
   onShare?: (trigger: Trigger) => void;
   /** Set when the trigger was installed from a share. */
   onCheckUpdate?: () => void;
-  checkUpdateLabel?: string;
 };
 
 function useTargetChoices() {
@@ -64,7 +63,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   );
 }
 
-export function TriggerEditor({ trigger, exists, client, busy, onClose, onSave, onDelete, onShare, onCheckUpdate, checkUpdateLabel }: Props) {
+export function TriggerEditor({ trigger, exists, client, busy, onClose, onSave, onDelete, onShare, onCheckUpdate }: Props) {
   const [draft, setDraft] = useState(trigger);
   const [error, setError] = useState<string | null>(null);
   const targets = useTargetChoices();
@@ -170,12 +169,12 @@ export function TriggerEditor({ trigger, exists, client, busy, onClose, onSave, 
           </View>
         </TriggerSection>
         {error ? <Txt variant="muted" style={{ color: colors.danger }}>{error}</Txt> : null}
-        {exists && onCheckUpdate ? <Button title={checkUpdateLabel ?? "Check for updates"} variant="secondary" disabled={busy} onPress={onCheckUpdate} /> : null}
-        <View style={styles.buttons}>
-          {exists ? <Button title="Delete" variant="secondary" disabled={busy} style={{ flex: 1 }} onPress={() => onDelete(draft)} /> : null}
-          {exists && onShare ? <Button title="Share" variant="secondary" disabled={busy} style={{ flex: 1 }} onPress={() => onShare(trigger)} /> : null}
-          <Button title={exists ? "Save" : "Add trigger"} loading={busy} style={{ flex: 1 }} onPress={save} />
-        </View>
+        {exists ? <View style={styles.buttons}>
+          {onCheckUpdate ? <Button title="Update" variant="secondary" small disabled={busy} style={{ flex: 1 }} onPress={onCheckUpdate} /> : null}
+          {onShare ? <Button title="Share" variant="secondary" small disabled={busy} style={{ flex: 1 }} onPress={() => onShare(trigger)} /> : null}
+          <Button title="Delete" variant="secondary" small disabled={busy} style={{ flex: 1 }} onPress={() => onDelete(draft)} />
+        </View> : null}
+        <Button title={exists ? "Save" : "Add trigger"} full loading={busy} onPress={save} />
       </ScrollView>
     </BottomSheet>
   );

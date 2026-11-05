@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   FlatList,
   Pressable,
@@ -6,10 +6,6 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import * as Haptics from 'expo-haptics';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { runOnJS } from 'react-native-reanimated';
-import type { MacroInfo } from '../../store/types';
 import { colors, font, radii, spacing } from '../../theme/theme';
 import { BottomSheet } from '../BottomSheet';
 import { NativeIcon } from '../NativeIcon';
@@ -21,51 +17,6 @@ export type FolderChoice = {
   folder: string | null;
   count?: number;
 };
-
-export const DROP_ROW_HEIGHT = process.env.EXPO_OS === 'android' ? 52 : 48;
-
-export const DraggablePluginRow = React.memo(function DraggablePluginRow({
-  plugin,
-  enabled,
-  onStart,
-  onMove,
-  onFinish,
-  onCancel,
-  children,
-}: {
-  plugin: MacroInfo;
-  enabled: boolean;
-  onStart: (plugin: MacroInfo) => void;
-  onMove: (absoluteY: number) => void;
-  onFinish: (plugin: MacroInfo) => void;
-  onCancel: (plugin: MacroInfo) => void;
-  children: React.ReactNode;
-}) {
-  const pan = useMemo(
-    () => Gesture.Pan()
-      .enabled(enabled)
-      .activateAfterLongPress(280)
-      .minDistance(0)
-      .onStart(() => {
-        runOnJS(onStart)(plugin);
-        if (process.env.EXPO_OS === 'ios') {
-          runOnJS(vibrate)();
-        }
-      })
-      .onUpdate((event) => runOnJS(onMove)(event.absoluteY))
-      .onEnd(() => runOnJS(onFinish)(plugin))
-      .onFinalize((_event, success) => {
-        if (!success) runOnJS(onCancel)(plugin);
-      }),
-    [enabled, onCancel, onFinish, onMove, onStart, plugin],
-  );
-
-  return <GestureDetector gesture={pan}><View>{children}</View></GestureDetector>;
-});
-
-function vibrate() {
-  void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-}
 
 export function FolderStrip({
   choices,
@@ -119,57 +70,6 @@ export function FolderStrip({
       contentContainerStyle={styles.folderStrip}
       keyboardShouldPersistTaps="handled"
     />
-  );
-}
-
-export function FolderDropTray({
-  plugin,
-  choices,
-  activeId,
-  onTopChange,
-}: {
-  plugin: MacroInfo;
-  choices: FolderChoice[];
-  activeId: string | null;
-  onTopChange: (top: number) => void;
-}) {
-  const listRef = useRef<React.ElementRef<typeof View>>(null);
-  const measure = () => {
-    requestAnimationFrame(() => {
-      listRef.current?.measureInWindow((_x, y) => onTopChange(y));
-    });
-  };
-  return (
-    <View pointerEvents="none" style={styles.dropOverlay}>
-      <View style={styles.dropTray}>
-        <View style={styles.dropHeading}>
-          <View style={styles.dragIcon}>
-            <NativeIcon sf="shippingbox.fill" material="extension" size={18} color={colors.primary} />
-          </View>
-          <View style={styles.dropTitle}>
-            <Txt variant="heading" numberOfLines={1}>{plugin.name}</Txt>
-            <Txt variant="faint">Drop into a folder</Txt>
-          </View>
-        </View>
-        <View ref={listRef} onLayout={measure}>
-          {choices.map((choice) => {
-            const active = choice.id === activeId;
-            return (
-              <View key={choice.id} style={[styles.dropRow, active && styles.dropRowActive]}>
-                <NativeIcon
-                  sf={choice.id === '__more__' ? 'ellipsis.circle' : choice.folder ? 'folder.fill' : 'tray.fill'}
-                  material={choice.id === '__more__' ? 'more-horiz' : choice.folder ? 'folder' : 'inbox'}
-                  size={20}
-                  color={active ? colors.primary : colors.textMuted}
-                />
-                <Txt variant="heading" numberOfLines={1} style={styles.dropRowText}>{choice.label}</Txt>
-                {active ? <NativeIcon sf="arrow.down.circle.fill" material="arrow-circle-down" size={20} color={colors.primary} /> : null}
-              </View>
-            );
-          })}
-        </View>
-      </View>
-    </View>
   );
 }
 
@@ -267,14 +167,13 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.7 },
   folderStrip: { gap: spacing.sm, paddingBottom: spacing.md },
   folderChip: {
-    minHeight: 36,
+    minHeight: 32,
     maxWidth: 190,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 10,
-    borderRadius: radii.md,
-    borderCurve: 'continuous',
+    paddingHorizontal: 12,
+    borderRadius: radii.pill,
     backgroundColor: colors.surface,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.borderSubtle,
@@ -283,14 +182,6 @@ const styles = StyleSheet.create({
   folderLabel: { flexShrink: 1, fontSize: font.size.caption, color: colors.textMuted },
   folderLabelActive: { color: colors.primary },
   folderCount: { fontVariant: ['tabular-nums'] },
-  dropOverlay: { ...StyleSheet.absoluteFillObject, zIndex: 20, justifyContent: 'flex-end', padding: spacing.md, backgroundColor: colors.overlay },
-  dropTray: { overflow: 'hidden', borderRadius: radii.xl, borderCurve: 'continuous', backgroundColor: colors.bgElevated },
-  dropHeading: { minHeight: 60, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.md, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.borderSubtle },
-  dragIcon: { width: 36, height: 36, borderRadius: radii.md, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primarySoft },
-  dropTitle: { flex: 1, minWidth: 0 },
-  dropRow: { height: DROP_ROW_HEIGHT, flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.md },
-  dropRowActive: { backgroundColor: colors.primarySoft },
-  dropRowText: { flex: 1, minWidth: 0 },
   sheetHeader: { paddingHorizontal: spacing.lg, paddingBottom: spacing.md, gap: 2 },
   pickerList: { maxHeight: 410 },
   pickerContent: { paddingHorizontal: spacing.md, paddingBottom: spacing.md },

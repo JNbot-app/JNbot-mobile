@@ -14,6 +14,8 @@ export const TERMS_OF_USE_URL =
   process.env.EXPO_PUBLIC_TERMS_OF_USE_URL ??
   `${websiteUrl}/eula`;
 
+export const GITHUB_URL = "https://github.com/JNbot-app";
+
 export const DISCORD_URL =
   process.env.EXPO_PUBLIC_DISCORD_URL ??
   "https://discord.gg/JNbGgypERe";

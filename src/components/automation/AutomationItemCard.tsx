@@ -21,6 +21,7 @@ export interface AutomationItemCardProps {
   accessibilityLabel?: string;
   accessibilityHint?: string;
   onPress: (item: MacroInfo | ProfileScriptInfo) => void;
+  onLongPress?: (item: MacroInfo | ProfileScriptInfo) => void;
 }
 
 export function getAutomationItemIconConfig(
@@ -92,6 +93,7 @@ export const AutomationItemCardComponent: React.FC<AutomationItemCardProps> = ({
   accessibilityLabel,
   accessibilityHint,
   onPress,
+  onLongPress,
 }) => {
   const profileScript = !isPlugin ? (item as ProfileScriptInfo) : undefined;
   const iconConfig = getAutomationItemIconConfig(item, isPlugin, matchedPlugin);
@@ -121,6 +123,10 @@ export const AutomationItemCardComponent: React.FC<AutomationItemCardProps> = ({
       accessibilityLabel={accessibilityLabel ?? `Configure ${item.name}`}
       accessibilityHint={accessibilityHint ?? "Opens script settings and controls"}
       onPress={handlePress}
+      onLongPress={onLongPress && (() => {
+        if (process.env.EXPO_OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+        onLongPress(item);
+      })}
       style={({ pressed }) => [
         styles.card,
         isFirst && styles.cardFirst,

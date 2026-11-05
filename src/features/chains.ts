@@ -109,13 +109,12 @@ export function removeChainStep(chain: Chain, index: number): Chain {
     .map((step) => ({ ...step, onSuccess: clear(step.onSuccess), onFail: clear(step.onFail) })));
 }
 
-export function moveChainStep(chain: Chain, index: number, direction: -1 | 1): Chain {
-  const destination = index + direction;
-  if (index < 0 || index >= chain.chains.length) return chain;
-  if (destination < 0 || destination >= chain.chains.length) return chain;
+export function moveChainStep(chain: Chain, from: number, to: number): Chain {
+  if (from === to || from < 0 || from >= chain.chains.length) return chain;
+  if (to < 0 || to >= chain.chains.length) return chain;
   const next = [...chain.chains];
-  const [step] = next.splice(index, 1);
-  next.splice(destination, 0, step);
+  const [step] = next.splice(from, 1);
+  next.splice(to, 0, step);
   return chainSteps(chain, next);
 }
 

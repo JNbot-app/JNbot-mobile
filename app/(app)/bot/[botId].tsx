@@ -46,6 +46,7 @@ import type { InventoryPacket } from "../../../src/features/inventory";
 import { chatLineText, completionMatches, type ChatLine, type ChatPart } from "../../../src/features/chat";
 import { ChatComposer } from "../../../src/components/bot/ChatComposer";
 import { colors, font, radii, spacing, palette } from "../../../src/theme/theme";
+import { NativeIcon } from "../../../src/components/NativeIcon";
 import { useSafeBack } from "../../../src/hooks/useSafeBack";
 import type { JNbotClient } from "../../../src/client/JNbotClient";
 import type { ActiveBot } from "../../../src/store/types";
@@ -437,7 +438,10 @@ function Chat({
             ))}
           </ScrollView>
         ) : (
-          <Txt variant="muted">No chat received yet.</Txt>
+          <View style={styles.chatEmpty}>
+            <NativeIcon sf="bubble.left.and.bubble.right" material="chat-bubble-outline" size={28} color={colors.textFaint} />
+            <Txt variant="muted">No chat received yet</Txt>
+          </View>
         )}
         {isScrolledUp ? (
           <Pressable
@@ -641,6 +645,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primarySoft,
     borderRadius: radii.md,
   },
+  chatEmpty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.sm },
   chatCard: {
     flex: 1,
     padding: spacing.sm,
@@ -676,7 +681,7 @@ const styles = StyleSheet.create({
   scrollToBottomText: {
     color: colors.text,
     fontWeight: "600",
-    fontSize: 11,
+    fontSize: 12,
   },
   messageInput: {
     color: colors.text,

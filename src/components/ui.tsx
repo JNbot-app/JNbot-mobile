@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { colors, font, radii, spacing, palette } from '../theme/theme';
+import { NativeIcon } from './NativeIcon';
 
 // ── Text ─────────────────────────────────────────────────────────────────────
 
@@ -245,6 +246,23 @@ export function IconButton({
   );
 }
 
+/** Primary "add / create" action for screen headers. */
+export function AddButton({
+  onPress,
+  disabled,
+  accessibilityLabel,
+}: {
+  onPress: () => void;
+  disabled?: boolean;
+  accessibilityLabel: string;
+}) {
+  return (
+    <IconButton bg={colors.primary} accessibilityLabel={accessibilityLabel} disabled={disabled} onPress={onPress}>
+      <NativeIcon sf="plus" material="add" size={24} color={colors.primaryOn} />
+    </IconButton>
+  );
+}
+
 // ── Section header ───────────────────────────────────────────────────────────
 
 export function SectionHeader({
@@ -277,22 +295,34 @@ export function EmptyState({
   icon,
   title,
   subtitle,
+  compact,
+  actionLabel,
+  onAction,
 }: {
   icon?: React.ReactNode;
   title: string;
   subtitle?: string;
+  actionLabel?: string;
+  onAction?: () => void;
+  /** Tighter padding for use inside a card/group. */
+  compact?: boolean;
 }) {
   return (
-    <View style={styles.empty}>
+    <View style={[styles.empty, compact && styles.emptyCompact]}>
       {icon}
       <Txt variant="heading" style={{ marginTop: spacing.md, textAlign: 'center' }}>
         {title}
       </Txt>
       {subtitle && (
-        <Txt variant="muted" style={{ marginTop: 6, textAlign: 'center', maxWidth: 260 }}>
+        <Txt variant="muted" style={{ marginTop: 6, textAlign: 'center', maxWidth: 300 }}>
           {subtitle}
         </Txt>
       )}
+      {onAction && actionLabel ? (
+        <Pressable accessibilityRole="button" onPress={onAction} style={styles.emptyAction}>
+          <Txt variant="heading" style={{ color: colors.primary }}>{actionLabel}</Txt>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -318,7 +348,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: radii.pill,
   },
-  badgeText: { fontSize: 11, fontWeight: '600' },
+  badgeText: { fontSize: 12, fontWeight: '600' },
   btn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -353,13 +383,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  countText: { color: colors.textMuted, fontSize: 11, fontWeight: '700' },
+  countText: { color: colors.textMuted, fontSize: 12, fontWeight: '700' },
   empty: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 56,
     paddingHorizontal: spacing.xl,
   },
+  emptyAction: { marginTop: spacing.sm, minHeight: process.env.EXPO_OS === 'android' ? 48 : 44, justifyContent: 'center', paddingHorizontal: spacing.lg },
+  emptyCompact: { paddingVertical: spacing.xl },
   divider: {
     height: 1,
     backgroundColor: colors.borderSubtle,

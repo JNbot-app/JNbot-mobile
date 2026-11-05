@@ -463,7 +463,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceHover,
   },
   controlLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
   },
   controlLabelWide: {

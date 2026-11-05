@@ -3,7 +3,9 @@ import { Alert, ScrollView, StyleSheet, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PickerModal } from "../../../src/components/PickerField";
+import { ChainStepList } from "../../../src/components/chains/ChainStepList";
 import { ChainStepRow } from "../../../src/components/chains/ChainStepRow";
+import { ShareUpdateRow } from "../../../src/components/share/ShareUpdateRow";
 import { NativeIcon } from "../../../src/components/NativeIcon";
 import { Button, EmptyState, IconButton, PressableCard, Txt } from "../../../src/components/ui";
 import { useFeedback } from "../../../src/components/AppFeedback";
@@ -24,7 +26,7 @@ import { selectCanUseAccounts, selectCanUseScripts, useStore } from "../../../sr
 import type { Chain, ScriptActionInfo } from "../../../src/store/types";
 import { colors, spacing } from "../../../src/theme/theme";
 import { Screen } from "../../../src/components/Screen";
-import { useOpenShareLink, useShareActions, useShareUpdateAction } from "../../../src/features/shares";
+import { useOpenShareLink, useShareActions } from "../../../src/features/shares";
 
 export default function ChainEditor() {
   const { chainId } = useLocalSearchParams<{ chainId: string }>();
@@ -39,7 +41,6 @@ export default function ChainEditor() {
   const profileKey = useStore((state) => state.activeProfileKey);
   const { local: canShare } = useShareActions();
   const openShareLink = useOpenShareLink();
-  const shareUpdate = useShareUpdateAction("chain", chainId);
   const chain = settings.scripts.chains?.[chainId];
   const [actions, setActions] = useState<ScriptActionInfo[] | null>(null);
   const [pickerIndex, setPickerIndex] = useState<number | null>(null);
@@ -148,11 +149,6 @@ export default function ChainEditor() {
     subtitle={active ? "Running" : `${chain.chains.length} ${chain.chains.length === 1 ? "action" : "actions"}`}
     back
     right={<>
-      {shareUpdate ? (
-        <IconButton bg="transparent" accessibilityLabel={shareUpdate.label} onPress={() => void shareUpdate.run()}>
-          <NativeIcon sf="arrow.triangle.2.circlepath" material="sync" size={21} color={shareUpdate.available ? colors.primary : colors.textMuted} />
-        </IconButton>
-      ) : null}
       {canShare ? (
         <IconButton
           bg="transparent"
@@ -173,12 +169,13 @@ export default function ChainEditor() {
           <Txt variant="muted">{options.gamemode && options.gamemode !== "any" ? options.gamemode : ""}</Txt>
           <NativeIcon sf="chevron.right" material="chevron-right" size={18} color={colors.textFaint} />
         </PressableCard>
+        <ShareUpdateRow kind="chain" localRef={chainId} />
         {options.description ? <Txt variant="muted">{options.description}</Txt> : null}
-        <View style={styles.intro}><Txt variant="heading">Steps</Txt><Txt variant="muted">Each selected account runs these from top to bottom.</Txt></View>
-        {chain.chains.length ? <View style={styles.steps}>{chain.chains.map((step, index) => {
+        <View style={styles.intro}><Txt variant="heading">Steps</Txt><Txt variant="muted">Each selected account runs these from top to bottom. Long-press a step to reorder.</Txt></View>
+        {chain.chains.length ? <ChainStepList count={chain.chains.length} enabled={canUseScripts} onMove={(from, to) => void save(moveChainStep(chain, from, to))}>{chain.chains.map((step, index) => {
           const action = actions?.find((item) => item.pluginId === step.scriptId);
-          return <ChainStepRow key={`${step.id}:${step.scriptId}:${index}`} step={step} steps={chain.chains} index={index} action={action} unavailable={Boolean(actions && step.scriptId && !action)} editable={canUseScripts} onSelectAction={() => setPickerIndex(index)} onEdit={() => router.push({ pathname: '/(app)/chains/step/[chainId]', params: { chainId, stepId: String(step.id) } })} onMove={(direction) => { if (chain) void save(moveChainStep(chain, index, direction)); }} onRemove={() => removeStep(index)} />;
-        })}</View> : <EmptyState icon={<NativeIcon sf="bolt" material="bolt" size={38} color={colors.textFaint} />} title="Add your first action" subtitle="Choose an action, then add more to build a complete routine." />}
+          return <ChainStepRow key={`${step.id}:${step.scriptId}:${index}`} step={step} steps={chain.chains} index={index} action={action} unavailable={Boolean(actions && step.scriptId && !action)} editable={canUseScripts} onSelectAction={() => setPickerIndex(index)} onEdit={() => router.push({ pathname: '/(app)/chains/step/[chainId]', params: { chainId, stepId: String(step.id) } })} onRemove={() => removeStep(index)} />;
+        })}</ChainStepList> : <EmptyState icon={<NativeIcon sf="bolt" material="bolt" size={38} color={colors.textFaint} />} title="Add your first action" subtitle="Choose an action, then add more to build a complete routine." />}
         <Button title="Add step" variant="secondary" full disabled={!canUseScripts} icon={<NativeIcon sf="plus" material="add" size={18} color={colors.text} />} onPress={addStep} />
       </ScrollView>
       <View style={[styles.footer, { paddingBottom: Math.max(spacing.lg, insets.bottom + spacing.sm) }]}>
@@ -195,7 +192,6 @@ const styles = StyleSheet.create({
   scroll: { padding: spacing.lg, paddingBottom: spacing.xl, gap: spacing.lg },
   settings: { minHeight: 52, padding: spacing.md, flexDirection: "row", alignItems: "center", gap: spacing.sm },
   intro: { gap: 2 },
-  steps: { gap: spacing.sm },
   footer: { gap: spacing.xs, paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.lg, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderSubtle, backgroundColor: colors.bg },
   permission: { textAlign: "center" },
 });

@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Badge, Txt } from '../ui';
 import { NativeIcon } from '../NativeIcon';
+import { ShareUpdateRow } from '../share/ShareUpdateRow';
 import { PluginBadges, getAuthorInfo } from './PluginBadges';
 import type { MacroInfo } from '../../store/types';
 import type { ProfileScriptInfo } from '../../hooks/useProfileScriptInfos';
@@ -67,6 +68,8 @@ export const PluginDetailsView: React.FC<PluginDetailsViewProps> = ({
         running={running}
         profileScript={profileScript}
       />
+
+      <ShareUpdateRow kind="plugin" localRef={plugin.pluginId} />
 
       {/* Blocked / Unavailable alert */}
       {blockedReason ? (

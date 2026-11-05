@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
   filters: { alignItems: "center", paddingHorizontal: spacing.lg, paddingTop: spacing.xs, paddingBottom: spacing.xs, gap: 5 },
   filterDivider: { width: 1, height: 16, marginHorizontal: 3, backgroundColor: colors.border },
   chip: { height: 26, maxWidth: 140, justifyContent: "center", paddingHorizontal: 8, borderRadius: radii.pill, borderWidth: 1, borderColor: colors.borderSubtle, backgroundColor: colors.surface },
-  chipText: { fontSize: 11, fontWeight: "500" },
+  chipText: { fontSize: 12, fontWeight: "500" },
   activeChip: { borderColor: colors.primary, backgroundColor: colors.primary },
   list: { padding: spacing.lg, paddingBottom: spacing.xxl, flexGrow: 1 },
   logLine: { flexDirection: "row", gap: spacing.sm, paddingVertical: spacing.sm, paddingRight: spacing.sm, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.borderSubtle },

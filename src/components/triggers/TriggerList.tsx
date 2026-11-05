@@ -1,6 +1,6 @@
 import React from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { NativeIcon } from "../NativeIcon";
 import type { Trigger } from "../../features/triggers";
 import type { AltTag } from "../../store/types";
 import { useStore } from "../../store/store";
@@ -43,9 +43,11 @@ export function TriggerList({ editor }: { editor: ReturnType<typeof useTriggerEd
           </View>
         ) : (
           <EmptyState
-            icon={<Ionicons name="flash-outline" size={36} color={colors.textFaint} />}
+            icon={<NativeIcon sf="bolt" material="flash-on" size={40} color={colors.textFaint} />}
             title="No triggers yet"
-            subtitle="Get notified or run actions when something happens to your bots."
+            subtitle="Triggers react to events on your bots, like a disconnect or a chat message, by notifying you or running a script automatically."
+            actionLabel="Add a trigger"
+            onAction={editor.busy || !editor.client ? undefined : () => editor.open()}
           />
         )}
       </ScrollView>

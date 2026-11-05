@@ -15,7 +15,6 @@ export function ChainStepRow({
   editable,
   onSelectAction,
   onEdit,
-  onMove,
   onRemove,
 }: {
   step: ChainStep;
@@ -26,11 +25,9 @@ export function ChainStepRow({
   editable: boolean;
   onSelectAction: () => void;
   onEdit: () => void;
-  onMove: (direction: -1 | 1) => void;
   onRemove: () => void;
 }) {
   const actionName = action?.name ?? (step.scriptId ? step.name || step.scriptId : "Choose an action");
-  const total = steps.length;
   const changed = Object.keys(step.options ?? {}).length;
   const summary = [
     changed > 0 && `${changed} option${changed === 1 ? "" : "s"} changed`,
@@ -46,12 +43,9 @@ export function ChainStepRow({
           <Txt variant="heading" numberOfLines={1}>{actionName}</Txt>
           <Txt variant="faint" numberOfLines={1} style={unavailable ? { color: colors.warning } : undefined}>{unavailable ? "Unavailable — choose a replacement" : action?.description || "Select an action to run"}</Txt>
         </View>
-        <NativeIcon sf="chevron.right" material="chevron-right" size={17} color={colors.textFaint} />
       </Pressable>
       <View style={styles.controls}>
         <IconButton bg="transparent" disabled={!editable} accessibilityLabel={`Edit step ${index + 1}`} onPress={onEdit}><NativeIcon sf="slider.horizontal.3" material="tune" size={18} color={colors.textMuted} /></IconButton>
-        <IconButton bg="transparent" disabled={!editable || index === 0} accessibilityLabel={`Move step ${index + 1} up`} onPress={() => onMove(-1)}><NativeIcon sf="arrow.up" material="arrow-upward" size={17} color={colors.textMuted} /></IconButton>
-        <IconButton bg="transparent" disabled={!editable || index === total - 1} accessibilityLabel={`Move step ${index + 1} down`} onPress={() => onMove(1)}><NativeIcon sf="arrow.down" material="arrow-downward" size={17} color={colors.textMuted} /></IconButton>
         <IconButton bg="transparent" disabled={!editable} accessibilityLabel={`Remove step ${index + 1}`} onPress={onRemove}><NativeIcon sf="trash" material="delete-outline" size={19} color={colors.danger} /></IconButton>
       </View>
     </View>
