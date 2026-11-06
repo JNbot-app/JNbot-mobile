@@ -12,14 +12,17 @@ import {
 } from "../../store/store";
 import { colors, font, radii, spacing } from "../../theme/theme";
 import {
+  DAY,
+  presetRepeat,
   REPEAT_CHOICES,
+  repeatInterval,
   repeatPreset,
   scheduleError,
   type RepeatPreset,
-  type ScheduleRepeat,
   type ScriptSchedule,
 } from "../../generated/client-contract/cooldowns";
 import { useRunnableScripts } from "../../hooks/useRunnableScripts";
+import { DurationFields } from "./DurationFields";
 import ScheduleDateTime from "./ScheduleDateTime";
 import ScheduleOverrides from "./ScheduleOverrides";
 import { chainIdFromPluginId } from "../../generated/client-contract/chains";
@@ -47,9 +50,8 @@ export default function ScheduleEditor({
   const [preset, setPreset] = useState<RepeatPreset>(
     repeatPreset(schedule?.repeat),
   );
-  const [every, setEvery] = useState(String(schedule?.repeat?.every ?? 1));
-  const [unit, setUnit] = useState<ScheduleRepeat["unit"]>(
-    schedule?.repeat?.unit ?? "day",
+  const [customRepeat, setCustomRepeat] = useState(
+    repeatInterval(schedule?.repeat) || DAY,
   );
   const [enabled, setEnabled] = useState(schedule?.autoStart ?? true);
   const [options, setOptions] = useState<Record<string, unknown>>(
@@ -67,13 +69,7 @@ export default function ScheduleEditor({
       pluginId,
       nextRunAt,
       autoStart: enabled,
-      repeat:
-        preset === "never"
-          ? undefined
-          : {
-              every: preset === "custom" ? Number(every) : 1,
-              unit: preset === "custom" ? unit : preset,
-            },
+      repeat: presetRepeat(preset, customRepeat),
       options: Object.keys(options).length ? options : undefined,
     };
     const validation = scheduleError(next);
@@ -170,24 +166,9 @@ export default function ScheduleEditor({
         {preset === "custom" && (
           <View style={styles.field}>
             <Txt variant="label">Run every</Txt>
-            <TextInput
-              accessibilityLabel="Repeat interval"
-              keyboardType="number-pad"
-              value={every}
-              onChangeText={setEvery}
-              style={styles.input}
-            />
-            <PickerField
-              title="Repeat unit"
-              value={unit}
-              options={["hour", "day", "week"].map((value) => ({
-                label: `${value}s`,
-                value,
-              }))}
-              onChange={(value) => {
-                if (value === "hour" || value === "day" || value === "week")
-                  setUnit(value);
-              }}
+            <DurationFields
+              initialValue={customRepeat}
+              onChange={setCustomRepeat}
             />
           </View>
         )}

@@ -1,7 +1,11 @@
-import { reminderDueAt, repeatInterval, scheduleLabel, type ScriptCooldown, type ScriptSchedule } from '../../generated/client-contract/cooldowns';
+import { chainIdFromPluginId } from '../../generated/client-contract/chains';
+import { DAY, formatInterval, HOUR, MINUTE, reminderDueAt, repeatInterval, scheduleLabel, withEditedOptions, type ScriptCooldown, type ScriptSchedule } from '../../generated/client-contract/cooldowns';
 import { PRESET_OPTION, withPreset } from '../../generated/client-contract/pluginPresets';
+import { useRunnableScripts } from '../../hooks/useRunnableScripts';
+import { DurationFields } from './DurationFields';
 import PresetPicker from './PresetPicker';
 import ScheduleEditor from './ScheduleEditor';
+import ScheduleOverrides from './ScheduleOverrides';
 import React, { useEffect, useMemo, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, Switch, TextInput, View } from "react-native";
 import { BottomSheet } from "../BottomSheet";
@@ -13,10 +17,6 @@ import { selectProfileReady, useStore } from "../../store/store";
 import type { Cooldown } from "../../store/types";
 import { colors, font, radii, spacing } from "../../theme/theme";
 
-const MINUTE = 60_000;
-const HOUR = 60 * MINUTE;
-const DAY = 24 * HOUR;
-
 function remainingLabel(ms: number) {
   if (ms <= 0) return "Ready";
   const days = Math.floor(ms / DAY);
@@ -25,14 +25,6 @@ function remainingLabel(ms: number) {
   if (days) return `${days}d ${hours}h`;
   if (hours) return minutes ? `${hours}h ${minutes}m` : `${hours}h`;
   return `${Math.max(1, minutes)}m`;
-}
-
-function intervalLabel(cooldownMs: number) {
-  const days = Math.floor(cooldownMs / DAY);
-  const hours = Math.floor((cooldownMs % DAY) / HOUR);
-  const minutes = Math.round((cooldownMs % HOUR) / MINUTE);
-  return [days && `${days}d`, hours && `${hours}h`, minutes && `${minutes}m`]
-    .filter(Boolean).join(" ") || "1m";
 }
 
 function nextRunLabel(timestamp: number) {
@@ -132,7 +124,7 @@ export function CooldownList({ creatingSchedule, onCloseSchedule, onCreate }: {
               <View style={styles.rowBody}>
                 <Txt variant="heading" numberOfLines={1}>{cooldown.name}</Txt>
                 <Txt variant="faint" numberOfLines={1}>
-                  {scheduled ? `${paused ? "Paused · " : ""}${scheduleLabel(cooldown.repeat)}` : `Every ${intervalLabel(cooldown.cooldown)}`}
+                  {scheduled ? `${paused ? "Paused · " : ""}${scheduleLabel(cooldown.repeat)}` : `Every ${formatInterval(cooldown.cooldown)}`}
                 </Txt>
               </View>
               {ready ? (
@@ -143,17 +135,19 @@ export function CooldownList({ creatingSchedule, onCloseSchedule, onCreate }: {
                   <Txt variant="faint">{nextRunLabel(readyAt)}</Txt>
                 </View>
               )}
-              <Pressable
-                accessibilityRole="switch"
-                accessibilityState={{ checked: auto }}
-                accessibilityLabel={scheduled ? `Enable ${cooldown.name}` : `Auto-run ${cooldown.name}`}
-                disabled={disabled}
-                hitSlop={8}
-                onPress={() => void run(() => replace({ ...cooldown, autoStart: !auto }))}
-                style={[styles.autoButton, auto && styles.autoButtonOn]}
-              >
-                <NativeIcon sf={auto ? "bolt.fill" : "bolt"} material="bolt" size={18} color={auto ? colors.primary : colors.textMuted} />
-              </Pressable>
+              {ready ? null : (
+                <Pressable
+                  accessibilityRole="switch"
+                  accessibilityState={{ checked: auto }}
+                  accessibilityLabel={scheduled ? `Enable ${cooldown.name}` : `Auto-run ${cooldown.name}`}
+                  disabled={disabled}
+                  hitSlop={8}
+                  onPress={() => void run(() => replace({ ...cooldown, autoStart: !auto }))}
+                  style={[styles.autoButton, auto && styles.autoButtonOn]}
+                >
+                  <NativeIcon sf={auto ? "bolt.fill" : "bolt"} material="bolt" size={18} color={auto ? colors.primary : colors.textMuted} />
+                </Pressable>
+              )}
             </View>
             {ready ? null : <View style={styles.track}>
               <View style={[styles.fill, { width: `${progress * 100}%` }, paused && styles.fillPaused]} />
@@ -189,20 +183,16 @@ function CooldownEditor({ cooldown, busy, onClose, onDelete, onReset, onSave }: 
   onSave: (cooldown: ScriptCooldown) => void;
 }) {
   const [name, setName] = useState("");
-  const [days, setDays] = useState("0");
-  const [hours, setHours] = useState("0");
-  const [minutes, setMinutes] = useState("0");
+  const [cooldownMs, setCooldownMs] = useState(0);
   const [autoStart, setAutoStart] = useState(false);
-  const [preset, setPreset] = useState<string>();
+  const [options, setOptions] = useState<Record<string, unknown>>({});
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!cooldown) return;
-    setPreset(cooldown.options?.[PRESET_OPTION]);
+    setOptions(cooldown.options ?? {});
     setName(cooldown.name);
-    setDays(String(Math.floor(cooldown.cooldown / DAY)));
-    setHours(String(Math.floor((cooldown.cooldown % DAY) / HOUR)));
-    setMinutes(String(Math.round((cooldown.cooldown % HOUR) / MINUTE)));
+    setCooldownMs(cooldown.cooldown);
     setAutoStart(cooldown.autoStart === true);
     setError(null);
   }, [cooldown]);
@@ -212,12 +202,9 @@ function CooldownEditor({ cooldown, busy, onClose, onDelete, onReset, onSave }: 
     const trimmed = name.trim();
     if (!trimmed) return setError("Enter a cooldown name.");
     if (trimmed.length > 60) return setError("Use 60 characters or fewer.");
-    const cooldownMs = Math.max(0, Number(days) || 0) * DAY
-      + Math.max(0, Number(hours) || 0) * HOUR
-      + Math.max(0, Number(minutes) || 0) * MINUTE;
     if (cooldownMs < MINUTE) return setError("Set an interval of at least 1 minute.");
     const time = cooldownMs !== cooldown.cooldown ? Date.now() : cooldown.time;
-    onSave({ ...cooldown, name: trimmed, cooldown: cooldownMs, time, autoStart, options: withPreset(cooldown.options ?? {}, preset) });
+    onSave({ ...withEditedOptions(cooldown, options), name: trimmed, cooldown: cooldownMs, time, autoStart });
   };
 
   return (
@@ -232,14 +219,10 @@ function CooldownEditor({ cooldown, busy, onClose, onDelete, onReset, onSave }: 
           <TextInput accessibilityLabel="Cooldown name" value={name} onChangeText={(value) => { setName(value); setError(null); }} maxLength={61} placeholder="Cooldown name" placeholderTextColor={colors.textFaint} style={styles.nameInput} />
           {error ? <Txt variant="faint" style={styles.error}>{error}</Txt> : null}
         </View>
-        <PresetPicker pluginId={cooldown.pluginId} value={preset} onChange={setPreset} />
+        <CooldownOverrides pluginId={cooldown.pluginId} values={options} onChange={setOptions} />
         <View style={styles.fieldGroup}>
           <Txt variant="label" style={styles.fieldLabel}>RUN EVERY</Txt>
-          <View style={styles.durationRow}>
-            <DurationField label="days" value={days} onChange={setDays} />
-            <DurationField label="hours" value={hours} onChange={setHours} />
-            <DurationField label="minutes" value={minutes} onChange={setMinutes} />
-          </View>
+          <DurationFields initialValue={cooldown.cooldown} onChange={setCooldownMs} />
           <Txt variant="faint">Changing the interval resets the countdown.</Txt>
         </View>
         <View style={styles.settingGroup}>
@@ -253,11 +236,16 @@ function CooldownEditor({ cooldown, busy, onClose, onDelete, onReset, onSave }: 
   );
 }
 
-function DurationField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
-  return <View style={styles.durationField}>
-    <TextInput accessibilityLabel={label} value={value} onChangeText={(text) => onChange(text.replace(/[^0-9]/g, ""))} keyboardType="number-pad" selectTextOnFocus maxLength={4} style={styles.durationInput} />
-    <Txt variant="faint">{label}</Txt>
-  </View>;
+/** Unavailable plugins have no option definitions, so only their preset can change. */
+function CooldownOverrides({ pluginId, values, onChange }: {
+  pluginId: string;
+  values: Record<string, unknown>;
+  onChange: (next: Record<string, unknown>) => void;
+}) {
+  const { scripts } = useRunnableScripts();
+  const script = scripts.find(({ info }) => info.pluginId === pluginId);
+  if (script && !chainIdFromPluginId(pluginId)) return <ScheduleOverrides script={script} values={values} onChange={onChange} />;
+  return <PresetPicker pluginId={pluginId} value={values[PRESET_OPTION] as string | undefined} onChange={(preset) => onChange(withPreset(values, preset))} />;
 }
 
 const styles = StyleSheet.create({
@@ -286,9 +274,6 @@ const styles = StyleSheet.create({
   fieldLabel: { color: colors.textFaint, letterSpacing: 0.7 },
   nameInput: { minHeight: process.env.EXPO_OS === "android" ? 48 : 44, color: colors.text, fontSize: font.size.md, paddingHorizontal: spacing.md, backgroundColor: colors.surface, borderRadius: radii.md, borderCurve: "continuous" },
   error: { color: colors.danger },
-  durationRow: { flexDirection: "row", gap: spacing.sm },
-  durationField: { flex: 1, minWidth: 0, alignItems: "center", gap: 5, padding: spacing.sm, backgroundColor: colors.surface, borderRadius: radii.md, borderCurve: "continuous" },
-  durationInput: { alignSelf: "stretch", minHeight: 38, textAlign: "center", color: colors.text, fontSize: 20, fontWeight: "600" },
   settingGroup: { minHeight: 64, flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.md, backgroundColor: colors.surface, borderRadius: radii.md, borderCurve: "continuous" },
   settingCopy: { flex: 1, minWidth: 0, gap: 2 },
 });
