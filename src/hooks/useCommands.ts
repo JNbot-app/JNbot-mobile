@@ -4,6 +4,7 @@ import { selectProfileReady, useStore } from "../store/store";
 import type { ActiveBot, MacroInfo } from "../store/types";
 import type { SerializableOption } from "../runtime/types";
 import type { BotAction } from "../generated/client-contract/mobileClientContract";
+import { presetOptionPath, withPreset } from "../generated/client-contract/pluginPresets";
 
 export enum ScriptControl {
   PAUSE = 1 << 0,
@@ -24,10 +25,14 @@ export function useCommands() {
       restartAll: () => client.restartScript(),
       sendControl: (instanceId: number, control: ScriptControl) =>
         client.sendControl(instanceId, control),
-      runPlugin: (plugin: MacroInfo) =>
+      runPlugin: (plugin: MacroInfo, presetId?: string) =>
         client.startScript({
           script: "macro",
-          arguments: { macroInfo: plugin, devMode: false },
+          arguments: {
+            macroInfo: plugin,
+            devMode: false,
+            optionOverrides: withPreset({}, presetId),
+          },
         }),
       updatePluginOption: (
         pluginId: string,
@@ -35,7 +40,11 @@ export function useCommands() {
         value: unknown,
       ) =>
         client.updateSettings({
-          path: ["scripts", pluginId, option.id],
+          path: presetOptionPath(
+            useStore.getState().settings.scripts?.[pluginId],
+            pluginId,
+            option.id,
+          ),
           value,
         }),
       botAction: (bot: ActiveBot, action: BotAction, data?: unknown[]) =>

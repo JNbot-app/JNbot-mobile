@@ -33,6 +33,8 @@ export type ActiveScript = {
   name: string;
   scriptId: string;
   instanceId: number;
+  /** Name of the preset this instance runs; unset for the Default preset. */
+  presetName?: string;
   controls?: number;
   origin?: 'worker' | 'minecraft';
   progress?: { current: number; total: number; eta?: number };

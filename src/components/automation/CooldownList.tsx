@@ -1,4 +1,6 @@
 import { reminderDueAt, repeatInterval, scheduleLabel, type ScriptCooldown, type ScriptSchedule } from '../../generated/client-contract/cooldowns';
+import { PRESET_OPTION, withPreset } from '../../generated/client-contract/pluginPresets';
+import PresetPicker from './PresetPicker';
 import ScheduleEditor from './ScheduleEditor';
 import React, { useEffect, useMemo, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, Switch, TextInput, View } from "react-native";
@@ -191,10 +193,12 @@ function CooldownEditor({ cooldown, busy, onClose, onDelete, onReset, onSave }: 
   const [hours, setHours] = useState("0");
   const [minutes, setMinutes] = useState("0");
   const [autoStart, setAutoStart] = useState(false);
+  const [preset, setPreset] = useState<string>();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!cooldown) return;
+    setPreset(cooldown.options?.[PRESET_OPTION]);
     setName(cooldown.name);
     setDays(String(Math.floor(cooldown.cooldown / DAY)));
     setHours(String(Math.floor((cooldown.cooldown % DAY) / HOUR)));
@@ -213,7 +217,7 @@ function CooldownEditor({ cooldown, busy, onClose, onDelete, onReset, onSave }: 
       + Math.max(0, Number(minutes) || 0) * MINUTE;
     if (cooldownMs < MINUTE) return setError("Set an interval of at least 1 minute.");
     const time = cooldownMs !== cooldown.cooldown ? Date.now() : cooldown.time;
-    onSave({ ...cooldown, name: trimmed, cooldown: cooldownMs, time, autoStart });
+    onSave({ ...cooldown, name: trimmed, cooldown: cooldownMs, time, autoStart, options: withPreset(cooldown.options ?? {}, preset) });
   };
 
   return (
@@ -228,6 +232,7 @@ function CooldownEditor({ cooldown, busy, onClose, onDelete, onReset, onSave }: 
           <TextInput accessibilityLabel="Cooldown name" value={name} onChangeText={(value) => { setName(value); setError(null); }} maxLength={61} placeholder="Cooldown name" placeholderTextColor={colors.textFaint} style={styles.nameInput} />
           {error ? <Txt variant="faint" style={styles.error}>{error}</Txt> : null}
         </View>
+        <PresetPicker pluginId={cooldown.pluginId} value={preset} onChange={setPreset} />
         <View style={styles.fieldGroup}>
           <Txt variant="label" style={styles.fieldLabel}>RUN EVERY</Txt>
           <View style={styles.durationRow}>

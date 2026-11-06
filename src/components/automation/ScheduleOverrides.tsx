@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { PluginOptionInput } from "../PluginOptions";
+import PresetPicker from "./PresetPicker";
 import { Button, Txt } from "../ui";
 import { useClient } from "../../net/ConnectionProvider";
 import { useStore } from "../../store/store";
@@ -9,9 +10,13 @@ import {
   overrideValue,
   setOverride,
 } from "../../generated/client-contract/cooldowns";
+import {
+  presetValues,
+  PRESET_OPTION,
+  selectedPresetId,
+  withPreset,
+} from "../../generated/client-contract/pluginPresets";
 import type { RunnableScript } from "../../hooks/useRunnableScripts";
-
-const EMPTY_VALUES = {};
 
 export default function ScheduleOverrides({
   script,
@@ -30,9 +35,11 @@ export default function ScheduleOverrides({
   const [open, setOpen] = useState(false);
   const [descriptor, setDescriptor] = useState<PluginRunDescriptor>();
   const [error, setError] = useState<string>();
-  const saved = useStore(
-    (state) => state.settings.scripts?.[script.info.pluginId] ?? EMPTY_VALUES,
+  const stored = useStore(
+    (state) => state.settings.scripts?.[script.info.pluginId],
   );
+  const presetId = selectedPresetId(stored, values);
+  const saved = useMemo(() => presetValues(stored, presetId), [stored, presetId]);
   const alts = useStore((state) => state.settings.altData);
   const tags = useStore((state) => state.settings.altTags);
   useEffect(() => {
@@ -64,6 +71,11 @@ export default function ScheduleOverrides({
     descriptor?.sections.flatMap((section) => section.options) ?? [];
   return (
     <View style={{ gap: 12 }}>
+      <PresetPicker
+        pluginId={script.info.pluginId}
+        value={values[PRESET_OPTION] as string | undefined}
+        onChange={(preset) => onChange(withPreset(values, preset))}
+      />
       <Button
         title={open ? `Hide ${label.toLowerCase()}` : label}
         variant="secondary"

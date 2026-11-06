@@ -179,7 +179,7 @@ export default function ChainEditor() {
         <Button title="Add step" variant="secondary" full disabled={!canUseScripts} icon={<NativeIcon sf="plus" material="add" size={18} color={colors.text} />} onPress={addStep} />
       </ScrollView>
       <View style={[styles.footer, { paddingBottom: Math.max(spacing.lg, insets.bottom + spacing.sm) }]}>
-        {active ? <Button title="Stop chain" variant="danger" full icon={<NativeIcon sf="stop.fill" material="stop" size={17} color={colors.danger} />} onPress={() => void stop()} /> : <Button title={running ? "Starting…" : "Run chain"} loading={running} disabled={!runnable} full icon={<NativeIcon sf="play.fill" material="play-arrow" size={18} color={colors.primaryOn} />} onPress={() => void run()} />}
+        {active ? <View style={{ gap: spacing.sm }}><Button title="Stop chain" variant="danger" full icon={<NativeIcon sf="stop.fill" material="stop" size={17} color={colors.danger} />} onPress={() => void stop()} /><Button title="Run another instance" variant="secondary" full loading={running} disabled={!runnable} onPress={() => void run()} /></View> : <Button title={running ? "Starting…" : "Run chain"} loading={running} disabled={!runnable} full icon={<NativeIcon sf="play.fill" material="play-arrow" size={18} color={colors.primaryOn} />} onPress={() => void run()} />}
         {!canUseScripts ? <Txt variant="faint" style={styles.permission}>Script access is required to edit chains.</Txt> : !canUseAccounts ? <Txt variant="faint" style={styles.permission}>Account access is required to run chains.</Txt> : actions === null ? <Txt variant="faint" style={styles.permission}>Loading available actions…</Txt> : null}
       </View>
     </View>

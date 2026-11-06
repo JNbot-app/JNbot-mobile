@@ -27,6 +27,16 @@ import { PluginHeader } from './PluginHeader';
 import { PluginDetailsView } from './PluginDetailsView';
 import { PluginCodeReviewButton } from './PluginCodeReview';
 import { PluginOptionsView } from './PluginOptionsView';
+import { PickerField, PickerModal } from '../PickerField';
+import {
+  DEFAULT_PRESET,
+  MAX_SCRIPT_INSTANCES,
+  pluginPresets,
+  presetOptionPath,
+  presetValues,
+  PRESET_OPTION,
+  selectedPresetId,
+} from '../../generated/client-contract/pluginPresets';
 import { useClient } from '../../net/ConnectionProvider';
 import { useCommands } from '../../hooks/useCommands';
 import { usePluginPin } from '../../hooks/usePluginPin';
@@ -140,7 +150,7 @@ export function AutomationDrawerProvider({ children }: { children: React.ReactNo
           ...result,
           values: {
             ...result.values,
-            ...currentStoreSettings,
+            ...presetValues(currentStoreSettings),
           },
         };
 
@@ -167,7 +177,7 @@ export function AutomationDrawerProvider({ children }: { children: React.ReactNo
         pendingPatchesRef.current.clear();
         void client.updateSettings(
           entries.map(([optionId, value]) => ({
-            path: ['scripts', targetId, optionId],
+            path: presetOptionPath(useStore.getState().settings.scripts?.[targetId], targetId, optionId),
             value,
           })),
         );
@@ -243,26 +253,35 @@ export function AutomationDrawerProvider({ children }: { children: React.ReactNo
     close();
   }, [activeScripts, canUsePlugins, client, close, commands]);
 
-  const running =
-    !!plugin &&
-    Object.values(activeScripts).some(
-      (script) =>
-        script.scriptId === plugin.pluginId ||
-        script.name === plugin.name,
-    );
+  const instances = plugin
+    ? Object.values(activeScripts).filter(
+        (script) =>
+          script.scriptId === plugin.pluginId ||
+          script.name === plugin.name,
+      )
+    : [];
+
+  const selectPreset = async (presetId: string) => {
+    const pluginId = descriptor?.info?.pluginId;
+    if (!client || !pluginId) return;
+    await flush();
+    const patch = { path: ['scripts', pluginId, PRESET_OPTION], value: presetId };
+    actions.applySettingsPatches(patch);
+    await client.updateSettings(patch);
+  };
 
   const errors = plugin
     ? optionErrors[plugin.pluginId] ?? optionErrors[plugin.name]
     : undefined;
 
-  const run = async () => {
+  const run = async (presetId?: string) => {
     if (!descriptor?.info || !commands || loading || !canUseScripts || !canUseAccounts) return;
     setLoading(true);
     setError(null);
     try {
       await flush();
       await executeWithMonetization('script_start', () =>
-        commands.runPlugin(descriptor.info),
+        commands.runPlugin(descriptor.info, presetId),
       );
       close();
     } catch (cause) {
@@ -316,19 +335,14 @@ export function AutomationDrawerProvider({ children }: { children: React.ReactNo
         onChangeTab={setActiveTab}
         loading={loading}
         error={error}
-        running={running}
+        instanceCount={instances.length}
         onClose={close}
         onDelete={deletePlugin}
-        onRun={() => void run()}
+        onRun={(presetId) => void run(presetId)}
+        onSelectPreset={(presetId) => void selectPreset(presetId)}
         onStop={() => {
-          if (!plugin || !canUseScripts) return;
-          Object.values(activeScripts)
-            .filter(
-              (script) =>
-                script.scriptId === plugin.pluginId ||
-                script.name === plugin.name,
-            )
-            .forEach((script) => commands?.stopScript(script.instanceId));
+          if (!canUseScripts) return;
+          instances.forEach((script) => commands?.stopScript(script.instanceId));
           close();
         }}
         onChange={handleOptionChange}
@@ -355,10 +369,11 @@ function AutomationDrawer({
   onChangeTab,
   loading,
   error,
-  running,
+  instanceCount,
   onClose,
   onDelete,
   onRun,
+  onSelectPreset,
   onStop,
   onChange,
 }: {
@@ -370,10 +385,11 @@ function AutomationDrawer({
   onChangeTab: (tab: PluginTab) => void;
   loading: boolean;
   error: string | null;
-  running: boolean;
+  instanceCount: number;
   onClose: () => void;
   onDelete: (plugin: MacroInfo) => Promise<void>;
-  onRun: () => void;
+  onRun: (presetId?: string) => void;
+  onSelectPreset: (presetId: string) => void;
   onStop: () => void;
   onChange: (option: SerializableOption, value: unknown) => void;
 }) {
@@ -390,6 +406,23 @@ function AutomationDrawer({
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [codeReviewOpen, setCodeReviewOpen] = useState(false);
   const [deleting, setDeleting] = useState(false)
+  const [pickingPreset, setPickingPreset] = useState(false);
+  const running = instanceCount > 0;
+  const stored = useStore((state) =>
+    plugin ? state.settings.scripts?.[plugin.pluginId] : undefined,
+  );
+  const storedRef = useRef(stored);
+  storedRef.current = stored;
+  const selectedPreset = selectedPresetId(stored);
+  const presetChoices = useMemo<Choice[]>(() => {
+    const presets = Object.entries(pluginPresets(stored));
+    return presets.length
+      ? [
+          { label: 'Default', value: DEFAULT_PRESET },
+          ...presets.map(([value, { name }]) => ({ label: name, value })),
+        ]
+      : [];
+  }, [stored]);
 
   const allOptions = useMemo(
     () => descriptor?.sections.flatMap((section) => section.options) ?? [],
@@ -405,6 +438,11 @@ function AutomationDrawer({
     () => altTags.map((tag) => ({ label: tag.name, value: tag.id })),
     [altTags],
   );
+
+  // Switching presets swaps the form to the new preset's values.
+  useEffect(() => {
+    setValues(presetValues(storedRef.current));
+  }, [selectedPreset]);
 
   useEffect(() => {
     setValues(descriptor?.values ?? {});
@@ -555,6 +593,15 @@ function AutomationDrawer({
             keyboardDismissMode="on-drag"
           >
             {activeTab === 'options' ? (
+              <>
+              {presetChoices.length ? (
+                <PickerField
+                  title="Preset"
+                  options={presetChoices}
+                  value={selectedPreset}
+                  onChange={(presetId) => onSelectPreset(String(presetId))}
+                />
+              ) : null}
               <PluginOptionsView
                 descriptor={descriptor}
                 loading={loading}
@@ -574,6 +621,7 @@ function AutomationDrawer({
                 allOptions={allOptions}
                 resolveOptionValue={resolveOptionValue}
               />
+              </>
             ) : (
               <>
                 <PluginDetailsView
@@ -658,7 +706,28 @@ function AutomationDrawer({
                   color={running ? colors.danger : colors.primaryOn}
                 />
               }
-              onPress={running ? onStop : onRun}
+              onPress={running ? onStop : () => onRun()}
+            />
+            {running ? (
+              <Button
+                title="Run another instance"
+                variant="secondary"
+                full
+                disabled={loading || instanceCount >= MAX_SCRIPT_INSTANCES || !canUseScripts || !canUseAccounts}
+                onPress={() => (presetChoices.length ? setPickingPreset(true) : onRun())}
+              />
+            ) : null}
+            <PickerModal
+              visible={pickingPreset}
+              title="Run another instance with"
+              options={presetChoices}
+              value={undefined}
+              multiple={false}
+              onChange={(presetId) => {
+                setPickingPreset(false);
+                onRun(String(presetId));
+              }}
+              onClose={() => setPickingPreset(false)}
             />
           </View>
         </KeyboardAvoidingView>
