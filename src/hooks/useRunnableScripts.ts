@@ -1,17 +1,17 @@
-import { useEffect, useState } from "react";
-import { useClient } from "../../net/ConnectionProvider";
+import { useEffect, useMemo, useState } from "react";
+import { useClient } from "../net/ConnectionProvider";
 import {
   selectCanUsePlugins,
   selectCanUseScripts,
   selectProfileReady,
   useStore,
-} from "../../store/store";
-import type { MacroInfo } from "../../store/types";
-import { chainPluginId } from "../../generated/client-contract/chains";
+} from "../store/store";
+import type { MacroInfo } from "../store/types";
+import { chainPluginId } from "../generated/client-contract/chains";
 
-export type ScheduleScript = { info: MacroInfo; profileScriptId?: string };
+export type RunnableScript = { info: MacroInfo; profileScriptId?: string };
 
-export function useScheduleScripts() {
+export function useRunnableScripts() {
   const client = useClient();
   const ready = useStore(selectProfileReady);
   const profileKey = useStore((state) => state.activeProfileKey);
@@ -22,7 +22,7 @@ export function useScheduleScripts() {
   const savedScripts = useStore((state) => state.settings.scripts);
   const canUseScripts = useStore(selectCanUseScripts);
   const canUsePlugins = useStore(selectCanUsePlugins);
-  const [scripts, setScripts] = useState<ScheduleScript[]>([]);
+  const [scripts, setScripts] = useState<RunnableScript[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     let cancelled = false;
@@ -34,7 +34,7 @@ export function useScheduleScripts() {
       };
     const entries = profile?.scripts ?? [];
     void Promise.all(
-      entries.map(async (entry): Promise<ScheduleScript | undefined> => {
+      entries.map(async (entry): Promise<RunnableScript | undefined> => {
         if (profile?.disallowedPlugins?.includes(entry.pluginId))
           return undefined;
         try {
@@ -51,8 +51,8 @@ export function useScheduleScripts() {
       }),
     ).then((resolved) => {
       if (cancelled) return;
-      const byId = new Map<string, ScheduleScript>();
-      const candidates: (ScheduleScript | undefined)[] = [
+      const byId = new Map<string, RunnableScript>();
+      const candidates: (RunnableScript | undefined)[] = [
         ...resolved,
         ...installed.map((info) => ({ info })),
       ];
@@ -80,14 +80,20 @@ export function useScheduleScripts() {
   }, [client, ready, profile, installed, canUseScripts, canUsePlugins]);
 
   // Chains run like plugins under a `chain:<id>` pluginId.
-  const chains = Object.values(savedScripts?.chains ?? {}).map(
-    (chain): ScheduleScript => ({
-      info: {
-        pluginId: chainPluginId(chain.id),
-        name: savedScripts?.[chain.id]?.name ?? chain.name ?? "Chain",
-        scriptType: "script",
-      } as MacroInfo,
-    }),
+  const allScripts = useMemo(
+    () => [
+      ...scripts,
+      ...Object.values(savedScripts?.chains ?? {}).map(
+        (chain): RunnableScript => ({
+          info: {
+            pluginId: chainPluginId(chain.id),
+            name: savedScripts?.[chain.id]?.name ?? chain.name ?? "Chain",
+            scriptType: "script",
+          } as MacroInfo,
+        }),
+      ),
+    ],
+    [scripts, savedScripts],
   );
-  return { scripts: [...scripts, ...chains], loading };
+  return { scripts: allScripts, loading };
 }

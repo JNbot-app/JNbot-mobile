@@ -9,7 +9,7 @@ import {
   overrideValue,
   setOverride,
 } from "../../generated/client-contract/cooldowns";
-import type { ScheduleScript } from "./useScheduleScripts";
+import type { RunnableScript } from "../../hooks/useRunnableScripts";
 
 const EMPTY_VALUES = {};
 
@@ -20,7 +20,7 @@ export default function ScheduleOverrides({
   label = "Script overrides",
   hint = "Unchanged options use the script’s saved settings when it runs.",
 }: {
-  script: ScheduleScript;
+  script: RunnableScript;
   values: Record<string, unknown>;
   onChange: (next: Record<string, unknown>) => void;
   label?: string;

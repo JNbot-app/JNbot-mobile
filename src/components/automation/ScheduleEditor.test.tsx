@@ -34,8 +34,8 @@ jest.mock("../../hooks/useAsyncAction", () => ({
     run: (action: () => Promise<void>) => action(),
   }),
 }));
-jest.mock("./useScheduleScripts", () => ({
-  useScheduleScripts: () => ({ scripts: mockScripts, loading: false }),
+jest.mock("../../hooks/useRunnableScripts", () => ({
+  useRunnableScripts: () => ({ scripts: mockScripts, loading: false }),
 }));
 jest.mock("../BottomSheet", () => ({
   BottomSheet: ({ children }: { children: React.ReactNode }) => <>{children}</>,

@@ -8,6 +8,7 @@
     "pluginSignatures.ts": "6942f094d949ef33abd2bbc15f14b08de2129f2acf223bb73fe4c5405445dbb1",
     "profileCreation.ts": "5757f9904eac086aef75e6019b4fc10e234192752f637e0caf9d8a9604d58052",
     "profileUiSchema.ts": "9f8445b94917af4b3a255d895b0ee4117983fab1a9c00f14a74a94a7cafee3f2",
+    "scriptKinds.ts": "dcdf2651140c4055be4db4eac3f3b5a53acbeb886389e3af9cf498c8b03ac517",
     "share.ts": "3eecfc726e27b04c19ae6691ea75263063d94f58acaa466b021cefff22213062",
     "statsHistory.ts": "271d7ed0fb3ea4a3b62a89a931ba3d376ec9f9b4416b3f9acf550bd33b18408b",
     "triggers.ts": "f4292bb4349c5b0f7b5b63472a1fcdd808be8648ef02104abe226dfff21d8092",

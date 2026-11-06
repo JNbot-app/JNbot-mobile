@@ -19,7 +19,7 @@ import {
   type ScheduleRepeat,
   type ScriptSchedule,
 } from "../../generated/client-contract/cooldowns";
-import { useScheduleScripts } from "./useScheduleScripts";
+import { useRunnableScripts } from "../../hooks/useRunnableScripts";
 import ScheduleDateTime from "./ScheduleDateTime";
 import ScheduleOverrides from "./ScheduleOverrides";
 import { chainIdFromPluginId } from "../../generated/client-contract/chains";
@@ -36,7 +36,7 @@ export default function ScheduleEditor({
   const client = useClient();
   const ready = useStore(selectProfileReady);
   const canUseAccounts = useStore(selectCanUseAccounts);
-  const { scripts, loading } = useScheduleScripts();
+  const { scripts, loading } = useRunnableScripts();
   const { busy, run } = useAsyncAction();
   const [name, setName] = useState(schedule?.name ?? "");
   const [pluginId, setPluginId] = useState(schedule?.pluginId ?? "");
