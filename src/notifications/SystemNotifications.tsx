@@ -34,9 +34,14 @@ export async function hasSystemNotificationPermission(): Promise<boolean> {
 
 /** Resolves whether the OS lets JNbot show notifications, asking once if it still can. */
 export async function requestSystemNotificationPermission(): Promise<boolean> {
-  const current = await Notifications.getPermissionsAsync();
-  if (current.granted || !current.canAskAgain) return current.granted;
-  return (await Notifications.requestPermissionsAsync()).granted;
+  try {
+    const current = await Notifications.getPermissionsAsync();
+    if (current.granted || !current.canAskAgain) return current.granted;
+    return (await Notifications.requestPermissionsAsync()).granted;
+  } catch {
+    // iOS throws UNErrorDomain Code=1 when notifications aren't allowed for this install (e.g. sideloaded builds).
+    return false;
+  }
 }
 
 /** Buttons become notification actions; categories are shared by notifications with the same labels. */
