@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { EmptyState, IconButton, Txt } from "../../src/components/ui";
 import { RichText, parseRichText } from "../../src/components/RichText";
+import { ExplainErrorButton } from "../../src/components/ExplainErrorButton";
 import { useClient } from "../../src/net/ConnectionProvider";
 import { actions, useStore, type NormalizedLog } from "../../src/store/store";
 import { colors, font, radii, spacing } from "../../src/theme/theme";
@@ -168,6 +169,7 @@ function LogLine({ log }: { log: NormalizedLog }) {
           <Txt variant="faint">{new Date(log.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}</Txt>
         </View>
         <RichText selectable style={styles.logText}>{log.message}</RichText>
+        {log.level === 2 ? <ExplainErrorButton error={log.message} scriptName={log.scriptName} /> : null}
       </View>
     </View>
   );

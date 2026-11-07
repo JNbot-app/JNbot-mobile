@@ -358,6 +358,7 @@ export function useAutomationDrawer() {
 }
 
 import { dependencyKey, isRecord, resolveOptionValue } from './optionHelpers';
+import { LlmPrompt } from '../LlmPrompt';
 export { resolveOptionValue };
 
 function AutomationDrawer({
@@ -474,6 +475,17 @@ function AutomationDrawer({
       : next;
     setValues((current) => ({ ...current, [option.id]: persisted }));
     onChange(option, persisted);
+  };
+
+  const client = useClient();
+  // Same as the desktop: the AI picks values for the options the user describes.
+  const applyDescription = async (description: string) => {
+    if (!client || !plugin) return;
+    const changed = await client.generate<Record<string, unknown>>({ kind: 'options', description, pluginId: plugin.pluginId });
+    for (const [id, value] of Object.entries(changed)) {
+      const option = allOptions.find((item) => item.id === id);
+      if (option) update(option, value);
+    }
   };
 
   const confirmDelete = () => {
@@ -601,6 +613,9 @@ function AutomationDrawer({
                   value={selectedPreset}
                   onChange={(presetId) => onSelectPreset(String(presetId))}
                 />
+              ) : null}
+              {plugin && !profileScript ? (
+                <LlmPrompt placeholder="Describe the settings, e.g. only farm wheat" button="Apply" onSubmit={applyDescription} />
               ) : null}
               <PluginOptionsView
                 descriptor={descriptor}

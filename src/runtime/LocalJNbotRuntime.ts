@@ -4,6 +4,7 @@ import {
   type Address,
 } from "../generated/client-contract/messaging/Address";
 import { Messenger } from "../generated/client-contract/messaging/Messenger";
+import { llmRequestOptions } from "../generated/client-contract/llm";
 import type { ProfilePublication } from "../generated/client-contract/messaging/Protocol";
 import type {
   EndpointTransport,
@@ -406,6 +407,9 @@ export class LocalJNbotRuntime implements JNbotRuntime {
       { timeoutMs: 10_000 },
     );
   }
+  llmAction<T = unknown>(event: string, data?: unknown): Promise<T> {
+    return this.requireMessenger().request<T>("client:action", BACKEND, { event, data }, llmRequestOptions(event));
+  }
   invoke<T = unknown>(channel: string, data?: unknown) {
     return this.requireMessenger().request<T>("client:invoke", BACKEND, { channel, data });
   }
@@ -414,6 +418,7 @@ export class LocalJNbotRuntime implements JNbotRuntime {
       "client:profile-action",
       BACKEND,
       { profileId, event, data },
+      llmRequestOptions(event),
     );
   }
   async getInstalledPlugins() {

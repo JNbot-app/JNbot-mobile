@@ -27,6 +27,7 @@ import type { Chain, ScriptActionInfo } from "../../../src/store/types";
 import { colors, spacing } from "../../../src/theme/theme";
 import { Screen } from "../../../src/components/Screen";
 import { useOpenShareLink, useShareActions } from "../../../src/features/shares";
+import { LlmPrompt } from "../../../src/components/LlmPrompt";
 
 export default function ChainEditor() {
   const { chainId } = useLocalSearchParams<{ chainId: string }>();
@@ -82,6 +83,13 @@ export default function ChainEditor() {
     if (!chain) return;
     void save(chainSteps(chain, chain.chains.map((step, stepIndex) => stepIndex === index ? { ...step, ...patch } : step)));
   }, [chain, save]);
+
+  const generate = useCallback(async (description: string) => {
+    if (!client || !chain || !options) return;
+    const draft = await client.generate<{ name?: string; steps?: Chain["chains"] }>({ kind: "chain", description });
+    await save(chainSteps(chain, draft.steps ?? []));
+    if (draft.name) await client.updateSettings(saveChainOptionsPatch(chain.id, { ...options, name: draft.name }));
+  }, [chain, client, options, save]);
 
   const removeStep = useCallback((index: number) => {
     if (chain) void save(removeChainStep(chain, index));
@@ -175,7 +183,7 @@ export default function ChainEditor() {
         {chain.chains.length ? <ChainStepList count={chain.chains.length} enabled={canUseScripts} onMove={(from, to) => void save(moveChainStep(chain, from, to))}>{chain.chains.map((step, index) => {
           const action = actions?.find((item) => item.pluginId === step.scriptId);
           return <ChainStepRow key={`${step.id}:${step.scriptId}:${index}`} step={step} steps={chain.chains} index={index} action={action} unavailable={Boolean(actions && step.scriptId && !action)} editable={canUseScripts} onSelectAction={() => setPickerIndex(index)} onEdit={() => router.push({ pathname: '/(app)/chains/step/[chainId]', params: { chainId, stepId: String(step.id) } })} onRemove={() => removeStep(index)} />;
-        })}</ChainStepList> : <EmptyState icon={<NativeIcon sf="bolt" material="bolt" size={38} color={colors.textFaint} />} title="Add your first action" subtitle="Choose an action, then add more to build a complete routine." />}
+        })}</ChainStepList> : <><LlmPrompt placeholder="Describe the steps, e.g. claim the daily kit, then sell everything" onSubmit={generate} /><EmptyState icon={<NativeIcon sf="bolt" material="bolt" size={38} color={colors.textFaint} />} title="Add your first action" subtitle="Choose an action, then add more to build a complete routine." /></>}
         <Button title="Add step" variant="secondary" full disabled={!canUseScripts} icon={<NativeIcon sf="plus" material="add" size={18} color={colors.text} />} onPress={addStep} />
       </ScrollView>
       <View style={[styles.footer, { paddingBottom: Math.max(spacing.lg, insets.bottom + spacing.sm) }]}>

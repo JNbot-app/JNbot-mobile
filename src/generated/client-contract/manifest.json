@@ -4,6 +4,7 @@
     "chains.ts": "f6662634dae8d9ce55d405860b4b34b5b1eabe0b2d1e99bdc4b2891983c6d081",
     "clientPermissions.ts": "68b08e37c06ee671b8bfb03c0c4c48004ae280a1e56001552fb1f5fbfd3f785c",
     "cooldowns.ts": "7e116eec37cafdb0b2b10539d4f622e922b5974636f73702c5b89a695f94717a",
+    "llm.ts": "0048bbac966bb530d4e32d3e0ce3fd3377ad4119f390145febff279a00ebc78e",
     "mobileClientContract.ts": "69554c378fbf8717e9298448d27fab269fa189d7b50ec935b034da09e3508cc2",
     "pluginPresets.ts": "a6df58b908273c5fbb46a44f53b26c28d04426757b98b247127db675af611eb2",
     "pluginSignatures.ts": "6942f094d949ef33abd2bbc15f14b08de2129f2acf223bb73fe4c5405445dbb1",

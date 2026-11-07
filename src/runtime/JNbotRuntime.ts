@@ -77,6 +77,8 @@ export interface JNbotRuntime {
   ): Promise<T>;
   /** Calls a backend `ipcMain` handle (the desktop renderer's `ipcRenderer.invoke`). */
   invoke<T = unknown>(channel: string, data?: unknown): Promise<T>;
+  /** An optional-AI request (`LLM_*`); the phone's own runtime reports AI as not set up. */
+  llmAction<T = unknown>(event: string, data?: unknown): Promise<T>;
   getInstalledPlugins(): Promise<MacroInfo[]>;
   updatePluginMetadata(metadata: PluginMetadata): Promise<PluginMetadata>;
   savePluginCode(pluginId: string, code: string): Promise<unknown>;
