@@ -407,6 +407,10 @@ export class LocalJNbotRuntime implements JNbotRuntime {
       { timeoutMs: 10_000 },
     );
   }
+  /** The phone's own backend has no AI provider, so nothing streams. */
+  subscribeLlmStream() {
+    return () => {};
+  }
   llmAction<T = unknown>(event: string, data?: unknown): Promise<T> {
     return this.requireMessenger().request<T>("client:action", BACKEND, { event, data }, llmRequestOptions(event));
   }

@@ -358,7 +358,9 @@ export function useAutomationDrawer() {
 }
 
 import { dependencyKey, isRecord, resolveOptionValue } from './optionHelpers';
-import { LlmPrompt } from '../LlmPrompt';
+import { LlmPrompt, type LlmPromptProps } from '../LlmPrompt';
+import { LlmOptionChanges } from '../LlmOptionChanges';
+import type { LlmOptionsResult } from '../../generated/client-contract/llm';
 export { resolveOptionValue };
 
 function AutomationDrawer({
@@ -478,14 +480,25 @@ function AutomationDrawer({
   };
 
   const client = useClient();
-  // Same as the desktop: the AI picks values for the options the user describes.
-  const applyDescription = async (description: string) => {
-    if (!client || !plugin) return;
-    const changed = await client.generate<Record<string, unknown>>({ kind: 'options', description, pluginId: plugin.pluginId });
-    for (const [id, value] of Object.entries(changed)) {
-      const option = allOptions.find((item) => item.id === id);
-      if (option) update(option, value);
-    }
+  // Same as the desktop: the AI suggests values (matched to this profile's
+  // real gamemodes, alts and tags) and the user reviews them before applying.
+  const describeSettings: LlmPromptProps['onSubmit'] = async (description, run) => {
+    if (!plugin) return undefined;
+    const result = await run<LlmOptionsResult>({ event: 'LLM_GENERATE', input: { kind: 'options', description, pluginId: plugin.pluginId } });
+    if (!result) return undefined;
+    return (dismiss) => (
+      <LlmOptionChanges
+        result={result}
+        onDiscard={dismiss}
+        onApply={() => {
+          for (const [id, value] of Object.entries(result.values)) {
+            const option = allOptions.find((item) => item.id === id);
+            if (option) update(option, value);
+          }
+          dismiss();
+        }}
+      />
+    );
   };
 
   const confirmDelete = () => {
@@ -615,7 +628,7 @@ function AutomationDrawer({
                 />
               ) : null}
               {plugin && !profileScript ? (
-                <LlmPrompt placeholder="Describe the settings, e.g. only farm wheat" button="Apply" onSubmit={applyDescription} />
+                <LlmPrompt placeholder="Describe the settings, e.g. only farm wheat" button="Suggest" writingLabel="Choosing values" onSubmit={describeSettings} />
               ) : null}
               <PluginOptionsView
                 descriptor={descriptor}

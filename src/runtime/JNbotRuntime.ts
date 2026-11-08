@@ -1,3 +1,4 @@
+import type { LlmStreamMessage } from "../generated/client-contract/llm";
 import type { ActiveBot, AltWithData, MacroInfo } from "../store/types";
 import type { PluginMetadata } from "../features/plugins/folders";
 import type { Address } from "../generated/client-contract/messaging/Address";
@@ -79,6 +80,8 @@ export interface JNbotRuntime {
   invoke<T = unknown>(channel: string, data?: unknown): Promise<T>;
   /** An optional-AI request (`LLM_*`); the phone's own runtime reports AI as not set up. */
   llmAction<T = unknown>(event: string, data?: unknown): Promise<T>;
+  /** Live progress of AI requests this client made with a `streamId`. */
+  subscribeLlmStream(listener: (message: LlmStreamMessage) => void): RuntimeUnsubscribe;
   getInstalledPlugins(): Promise<MacroInfo[]>;
   updatePluginMetadata(metadata: PluginMetadata): Promise<PluginMetadata>;
   savePluginCode(pluginId: string, code: string): Promise<unknown>;

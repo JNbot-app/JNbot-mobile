@@ -2,7 +2,7 @@ import type { RemoteCapability } from "../generated/client-contract/clientPermis
 import { AppState, type AppStateStatus, type NativeEventSubscription } from "react-native";
 import type { ActiveBot, AltWithData, MacroInfo, ScriptActionInfo } from "../store/types";
 import { chainPluginId } from "../generated/client-contract/chains";
-import type { LlmGenerateInput } from "../generated/client-contract/llm";
+import type { LlmGenerateInput, LlmStreamMessage } from "../generated/client-contract/llm";
 import { actions, get, selectProfileReady } from "../store/store";
 import type { JNbotRuntime } from "../runtime/JNbotRuntime";
 import type {
@@ -75,8 +75,13 @@ export class JNbotClient {
   constructor(readonly runtime: JNbotRuntime) { }
 
   /** Optional AI features, served by the desktop's AI provider. */
-  llm<T = unknown>(event: "LLM_STATUS" | "LLM_EXPLAIN_ERROR", data?: unknown): Promise<T> {
+  llm<T = unknown>(event: "LLM_STATUS" | "LLM_EXPLAIN_ERROR" | "LLM_CANCEL", data?: unknown): Promise<T> {
     return this.runtime.llmAction<T>(event, data);
+  }
+
+  /** Live progress of AI requests made with a `streamId`. */
+  onLlmStream(listener: (message: LlmStreamMessage) => void) {
+    return this.runtime.subscribeLlmStream(listener);
   }
 
   /** "Describe it" for this client's own profile. */

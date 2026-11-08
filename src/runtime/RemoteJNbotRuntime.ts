@@ -6,7 +6,7 @@ import {
   type Address,
 } from "../generated/client-contract/messaging/Address";
 import { Messenger } from "../generated/client-contract/messaging/Messenger";
-import { llmRequestOptions } from "../generated/client-contract/llm";
+import { LLM_STREAM_EVENT, llmRequestOptions, type LlmStreamMessage } from "../generated/client-contract/llm";
 import type { ProfilePublication } from "../generated/client-contract/messaging/Protocol";
 import type {
   EndpointTransport,
@@ -443,6 +443,10 @@ export class RemoteJNbotRuntime implements JNbotRuntime {
   }
   invoke<T = unknown>(channel: string, data?: unknown): Promise<T> {
     return this.requireMessenger().request("client:invoke", BACKEND, { channel, data });
+  }
+  subscribeLlmStream(listener: (message: LlmStreamMessage) => void) {
+    if (!this.messenger || this.assignedAddress === null) return () => {};
+    return this.messenger.sub(LLM_STREAM_EVENT, this.assignedAddress, (data) => listener(data as LlmStreamMessage));
   }
 
   async getInstalledPlugins(): Promise<MacroInfo[]> {

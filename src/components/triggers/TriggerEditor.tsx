@@ -17,7 +17,7 @@ import { colors, spacing } from "../../theme/theme";
 import { TriggerActionsField } from "./TriggerActionsField";
 import { TriggerSection } from "./TriggerSection";
 import { triggerInputStyle } from "./triggerInputStyle";
-import { LlmPrompt } from "../LlmPrompt";
+import { LlmPrompt, type LlmPromptProps } from "../LlmPrompt";
 
 const EVENT_CHOICES: Choice[] = TRIGGER_EVENT_IDS.map((event) => ({
   label: TRIGGER_EVENTS[event].name,
@@ -70,8 +70,9 @@ export function TriggerEditor({ trigger, exists, client, busy, onClose, onSave, 
   const targets = useTargetChoices();
   const event = TRIGGER_EVENTS[draft.event];
   const targetCount = (draft.tags?.length ?? 0) + (draft.alts?.length ?? 0);
-  const generate = async (description: string) => {
-    const generated = await client!.generate<Trigger>({ kind: "trigger", description });
+  const generate: LlmPromptProps["onSubmit"] = async (description, run) => {
+    const generated = await run<Trigger>({ event: "LLM_GENERATE", input: { kind: "trigger", description } });
+    if (!generated) return;
     setDraft({ ...generated, id: draft.id });
     setError(null);
   };
@@ -98,7 +99,11 @@ export function TriggerEditor({ trigger, exists, client, busy, onClose, onSave, 
       <ScrollView contentContainerStyle={styles.editor} keyboardShouldPersistTaps="handled">
         <Txt variant="heading">{exists ? "Edit trigger" : "New trigger"}</Txt>
         {!exists && client ? (
-          <LlmPrompt placeholder="Describe it, e.g. post to Discord when a bot dies" onSubmit={generate} />
+          <LlmPrompt
+            placeholder="Describe it, e.g. post to Discord when a bot dies"
+            examples={["Notify me when a bot gets kicked", "Post to Discord when a bot dies", "Say hi when someone whispers"]}
+            onSubmit={generate}
+          />
         ) : null}
         <TriggerSection title="When" summary={event.name} defaultOpen>
           <PickerField title="Event" options={EVENT_CHOICES} value={draft.event} onChange={(value) => changeEvent(value as TriggerEvent)} />
