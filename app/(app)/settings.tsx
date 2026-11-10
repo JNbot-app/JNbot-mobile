@@ -477,6 +477,12 @@ export default function Settings() {
               value={bot.autoResourcePackAccept !== false}
               onChange={(value) => setBot((item) => ({ ...item, autoResourcePackAccept: value }))}
             />
+            <Toggle
+              label="Map captcha prompt"
+              description="When a bot holds a map right after joining, show it to you so you can type the captcha code."
+              value={bot.captcha_prompt === true}
+              onChange={(value) => setBot((item) => ({ ...item, captcha_prompt: value }))}
+            />
           </View>
 
           <View style={styles.settingGroup}>

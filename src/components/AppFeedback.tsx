@@ -6,6 +6,7 @@ import React, {
   useState,
 } from "react";
 import {
+  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -254,6 +255,9 @@ function InteractiveRequest({ request }: { request: ScriptUiRequest }) {
           </View>
           {request.kind === "prompt" ? (
             <View style={{ gap: spacing.sm }}>
+              {request.data.image ? (
+                <Image source={{ uri: request.data.image }} style={styles.requestImage} />
+              ) : null}
               {request.data.label ? <Txt variant="label">{request.data.label}</Txt> : null}
               <TextInput
                 autoFocus
@@ -495,6 +499,7 @@ const styles = StyleSheet.create({
   requestTitleRow: { flexDirection: "row", alignItems: "flex-start", gap: spacing.md },
   requestIcon: { width: 42, height: 42, borderRadius: radii.md, alignItems: "center", justifyContent: "center", backgroundColor: colors.primarySoft },
   requestInput: { minHeight: 48, color: colors.text, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, backgroundColor: colors.surface, paddingHorizontal: spacing.md, fontSize: font.size.base },
+  requestImage: { width: 256, height: 256, alignSelf: "center", borderRadius: radii.md },
   modalActions: { flexDirection: "row", justifyContent: "flex-end", gap: spacing.sm },
   dialogButtons: { gap: spacing.sm },
   altReviewList: { padding: spacing.lg, paddingBottom: spacing.xxl, gap: spacing.md },
