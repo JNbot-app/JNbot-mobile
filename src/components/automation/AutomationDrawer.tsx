@@ -27,14 +27,12 @@ import { PluginHeader } from './PluginHeader';
 import { PluginDetailsView } from './PluginDetailsView';
 import { PluginCodeReviewButton } from './PluginCodeReview';
 import { PluginOptionsView } from './PluginOptionsView';
-import { PickerField, PickerModal } from '../PickerField';
+import { PickerModal } from '../PickerField';
+import { PresetBar, presetChoices } from './PresetBar';
 import {
-  DEFAULT_PRESET,
   MAX_SCRIPT_INSTANCES,
-  pluginPresets,
   presetOptionPath,
   presetValues,
-  PRESET_OPTION,
   selectedPresetId,
 } from '../../generated/client-contract/pluginPresets';
 import { useClient } from '../../net/ConnectionProvider';
@@ -63,6 +61,13 @@ type DrawerContextValue = {
 };
 
 const DrawerContext = createContext<DrawerContextValue | null>(null);
+
+/** Settings patches for pending option edits, inside the plugin's selected preset. */
+const optionPatches = (pluginId: string, pending: Map<string, unknown>): SettingsPatch[] =>
+  Array.from(pending, ([optionId, value]) => ({
+    path: presetOptionPath(useStore.getState().settings.scripts?.[pluginId], pluginId, optionId),
+    value,
+  }));
 
 export function AutomationDrawerProvider({ children }: { children: React.ReactNode }) {
   const client = useClient();
@@ -96,12 +101,8 @@ export function AutomationDrawerProvider({ children }: { children: React.ReactNo
       plugin?.id ||
       activeTargetIdRef.current;
     if (!targetId || !client || pendingPatchesRef.current.size === 0) return;
-    const entries = Array.from(pendingPatchesRef.current.entries());
+    const patches = optionPatches(targetId, pendingPatchesRef.current);
     pendingPatchesRef.current.clear();
-    const patches: SettingsPatch[] = entries.map(([optionId, value]) => ({
-      path: ['scripts', targetId, optionId],
-      value,
-    }));
     try {
       await client.updateSettings(patches);
     } catch (err) {
@@ -119,15 +120,9 @@ export function AutomationDrawerProvider({ children }: { children: React.ReactNo
         debounceTimerRef.current = null;
       }
       if (pendingPatchesRef.current.size > 0 && activeTargetIdRef.current && client) {
-        const prevTargetId = activeTargetIdRef.current;
-        const entries = Array.from(pendingPatchesRef.current.entries());
+        const patches = optionPatches(activeTargetIdRef.current, pendingPatchesRef.current);
         pendingPatchesRef.current.clear();
-        void client.updateSettings(
-          entries.map(([optionId, value]) => ({
-            path: ['scripts', prevTargetId, optionId],
-            value,
-          })),
-        );
+        void client.updateSettings(patches);
       }
 
       const initialTargetId = initial.pluginId || initial.id || initial.name;
@@ -172,15 +167,9 @@ export function AutomationDrawerProvider({ children }: { children: React.ReactNo
         debounceTimerRef.current = null;
       }
       if (pendingPatchesRef.current.size > 0 && activeTargetIdRef.current && client) {
-        const targetId = activeTargetIdRef.current;
-        const entries = Array.from(pendingPatchesRef.current.entries());
+        const patches = optionPatches(activeTargetIdRef.current, pendingPatchesRef.current);
         pendingPatchesRef.current.clear();
-        void client.updateSettings(
-          entries.map(([optionId, value]) => ({
-            path: presetOptionPath(useStore.getState().settings.scripts?.[targetId], targetId, optionId),
-            value,
-          })),
-        );
+        void client.updateSettings(patches);
       }
     };
   }, [client]);
@@ -261,15 +250,6 @@ export function AutomationDrawerProvider({ children }: { children: React.ReactNo
       )
     : [];
 
-  const selectPreset = async (presetId: string) => {
-    const pluginId = descriptor?.info?.pluginId;
-    if (!client || !pluginId) return;
-    await flush();
-    const patch = { path: ['scripts', pluginId, PRESET_OPTION], value: presetId };
-    actions.applySettingsPatches(patch);
-    await client.updateSettings(patch);
-  };
-
   const errors = plugin
     ? optionErrors[plugin.pluginId] ?? optionErrors[plugin.name]
     : undefined;
@@ -339,7 +319,7 @@ export function AutomationDrawerProvider({ children }: { children: React.ReactNo
         onClose={close}
         onDelete={deletePlugin}
         onRun={(presetId) => void run(presetId)}
-        onSelectPreset={(presetId) => void selectPreset(presetId)}
+        onFlush={flush}
         onStop={() => {
           if (!canUseScripts) return;
           instances.forEach((script) => commands?.stopScript(script.instanceId));
@@ -376,7 +356,7 @@ function AutomationDrawer({
   onClose,
   onDelete,
   onRun,
-  onSelectPreset,
+  onFlush,
   onStop,
   onChange,
 }: {
@@ -392,7 +372,7 @@ function AutomationDrawer({
   onClose: () => void;
   onDelete: (plugin: MacroInfo) => Promise<void>;
   onRun: (presetId?: string) => void;
-  onSelectPreset: (presetId: string) => void;
+  onFlush: () => Promise<void>;
   onStop: () => void;
   onChange: (option: SerializableOption, value: unknown) => void;
 }) {
@@ -417,15 +397,7 @@ function AutomationDrawer({
   const storedRef = useRef(stored);
   storedRef.current = stored;
   const selectedPreset = selectedPresetId(stored);
-  const presetChoices = useMemo<Choice[]>(() => {
-    const presets = Object.entries(pluginPresets(stored));
-    return presets.length
-      ? [
-          { label: 'Default', value: DEFAULT_PRESET },
-          ...presets.map(([value, { name }]) => ({ label: name, value })),
-        ]
-      : [];
-  }, [stored]);
+  const runChoices = useMemo(() => presetChoices(stored), [stored]);
 
   const allOptions = useMemo(
     () => descriptor?.sections.flatMap((section) => section.options) ?? [],
@@ -619,13 +591,8 @@ function AutomationDrawer({
           >
             {activeTab === 'options' ? (
               <>
-              {presetChoices.length ? (
-                <PickerField
-                  title="Preset"
-                  options={presetChoices}
-                  value={selectedPreset}
-                  onChange={(presetId) => onSelectPreset(String(presetId))}
-                />
+              {descriptor?.sections.length ? (
+                <PresetBar pluginId={descriptor.info.pluginId} onBeforeChange={onFlush} />
               ) : null}
               {plugin && !profileScript ? (
                 <LlmPrompt placeholder="Describe the settings, e.g. only farm wheat" button="Suggest" writingLabel="Choosing values" onSubmit={describeSettings} />
@@ -742,13 +709,13 @@ function AutomationDrawer({
                 variant="secondary"
                 full
                 disabled={loading || instanceCount >= MAX_SCRIPT_INSTANCES || !canUseScripts || !canUseAccounts}
-                onPress={() => (presetChoices.length ? setPickingPreset(true) : onRun())}
+                onPress={() => (runChoices.length ? setPickingPreset(true) : onRun())}
               />
             ) : null}
             <PickerModal
               visible={pickingPreset}
               title="Run another instance with"
-              options={presetChoices}
+              options={runChoices}
               value={undefined}
               multiple={false}
               onChange={(presetId) => {
