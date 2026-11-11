@@ -75,7 +75,7 @@ export class JNbotClient {
   constructor(readonly runtime: JNbotRuntime) { }
 
   /** Optional AI features, served by the desktop's AI provider. */
-  llm<T = unknown>(event: "LLM_STATUS" | "LLM_EXPLAIN_ERROR" | "LLM_CANCEL", data?: unknown): Promise<T> {
+  llm<T = unknown>(event: "LLM_STATUS" | "LLM_EXPLAIN_ERROR" | "LLM_CANCEL" | "LLM_SET_CONFIG" | "LLM_TEST" | "LLM_MODELS" | "LLM_WRITE_PLUGIN" | "LLM_ASK_SHARE", data?: unknown): Promise<T> {
     return this.runtime.llmAction<T>(event, data);
   }
 

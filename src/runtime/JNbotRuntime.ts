@@ -78,7 +78,7 @@ export interface JNbotRuntime {
   ): Promise<T>;
   /** Calls a backend `ipcMain` handle (the desktop renderer's `ipcRenderer.invoke`). */
   invoke<T = unknown>(channel: string, data?: unknown): Promise<T>;
-  /** An optional-AI request (`LLM_*`); the phone's own runtime reports AI as not set up. */
+  /** An optional-AI request (`LLM_*`) (served by the phone's own backend or the connected desktop). */
   llmAction<T = unknown>(event: string, data?: unknown): Promise<T>;
   /** Live progress of AI requests this client made with a `streamId`. */
   subscribeLlmStream(listener: (message: LlmStreamMessage) => void): RuntimeUnsubscribe;

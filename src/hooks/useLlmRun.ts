@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { LlmGenerateInput, LlmStreamMessage } from "../generated/client-contract/llm";
+import type { LlmAskShareInput, LlmGenerateInput, LlmStreamMessage, LlmWritePluginInput } from "../generated/client-contract/llm";
 import { useClient } from "../net/ConnectionProvider";
 
 export type LlmRunState = {
@@ -18,7 +18,9 @@ export type LlmRunState = {
 /** The AI requests the phone makes. `LLM_GENERATE` runs on the current profile. */
 export type LlmRunRequest =
   | { event: "LLM_GENERATE"; input: LlmGenerateInput }
-  | { event: "LLM_EXPLAIN_ERROR"; input: { error: string; scriptName?: string } };
+  | { event: "LLM_EXPLAIN_ERROR"; input: { error: string; scriptName?: string } }
+  | { event: "LLM_WRITE_PLUGIN"; input: Omit<LlmWritePluginInput, "streamId"> }
+  | { event: "LLM_ASK_SHARE"; input: Omit<LlmAskShareInput, "streamId"> };
 
 export type LlmRun = LlmRunState & {
   /** Resolves to undefined when the user stopped it or it failed (see `error`). */

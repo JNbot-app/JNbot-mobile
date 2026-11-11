@@ -7,8 +7,12 @@ import type { MacroInfo } from '../../store/types';
 import { CODE_EDIT_LIMIT } from '../../features/plugins/code/highlight';
 import { colors, spacing } from '../../theme/theme';
 import { Button, Txt } from '../ui';
+import { LlmPrompt, type LlmPromptProps } from '../LlmPrompt';
+import type { LlmPluginDraft } from '../../generated/client-contract/llm';
 import { NativeIcon } from '../NativeIcon';
 import { PluginCodeLines, codeTextStyle } from './PluginCodeLines';
+
+const AI_EXAMPLES = ['What does this plugin do?', 'Add options for the hard-coded values', 'Recover when the bot is kicked to the hub'];
 
 type Source = Awaited<ReturnType<JNbotClient['getPluginCode']>>;
 
@@ -101,6 +105,34 @@ function PluginCodeReview({ plugin, onClose }: { plugin: MacroInfo; onClose: () 
       setSaving(false);
     }
   };
+  // The AI rewrites the draft; nothing is saved until "Save", and Undo restores the previous code.
+  const writeWithAi: LlmPromptProps['onSubmit'] = async (description, run) => {
+    const before = draft;
+    const changing = before.trim().length > 80;
+    const result = await run<LlmPluginDraft>({
+      event: 'LLM_WRITE_PLUGIN',
+      input: {
+        description,
+        scriptType: plugin.scriptType === 'action' ? 'action' : 'script',
+        source: changing ? before : undefined,
+        optionSchema: changing ? plugin.config : undefined,
+      },
+    });
+    if (!result?.source) return undefined;
+    setDraft(result.source);
+    return (dismiss) => (
+      <Button
+        title="Undo"
+        variant="secondary"
+        small
+        style={{ alignSelf: 'flex-start' }}
+        onPress={() => {
+          setDraft(before);
+          dismiss();
+        }}
+      />
+    );
+  };
   const large = source !== null && source.code.length > CODE_EDIT_LIMIT;
   return (
     <Modal visible animationType="slide" presentationStyle="fullScreen" onRequestClose={() => discard(onClose)}>
@@ -149,6 +181,15 @@ function PluginCodeReview({ plugin, onClose }: { plugin: MacroInfo; onClose: () 
                     textAlignVertical="top"
                     selectionColor={colors.primary}
                     style={styles.editor}
+                  />
+                  <LlmPrompt
+                    floating
+                    collapsedLabel="Write with AI"
+                    placeholder={draft.trim().length > 80 ? 'Describe what to change in the code' : 'Describe what this plugin should do'}
+                    button={draft.trim().length > 80 ? 'Change' : 'Write'}
+                    examples={AI_EXAMPLES}
+                    writingLabel="Writing code"
+                    onSubmit={writeWithAi}
                   />
                 </>
               ) : <PluginCodeLines code={source.code} language={source.language} />}

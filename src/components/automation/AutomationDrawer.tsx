@@ -591,12 +591,14 @@ function AutomationDrawer({
           >
             {activeTab === 'options' ? (
               <>
-              {descriptor?.sections.length ? (
-                <PresetBar pluginId={descriptor.info.pluginId} onBeforeChange={onFlush} />
-              ) : null}
-              {plugin && !profileScript ? (
-                <LlmPrompt placeholder="Describe the settings, e.g. only farm wheat" button="Suggest" writingLabel="Choosing values" onSubmit={describeSettings} />
-              ) : null}
+              <View style={styles.optionTools}>
+                {descriptor?.sections.length ? (
+                  <PresetBar pluginId={descriptor.info.pluginId} onBeforeChange={onFlush} />
+                ) : null}
+                {plugin && descriptor?.sections.length ? (
+                  <LlmPrompt collapsedLabel="Suggest settings with AI" placeholder="Describe the settings, e.g. only farm wheat and go slower" button="Suggest" writingLabel="Choosing values" onSubmit={describeSettings} />
+                ) : null}
+              </View>
               <PluginOptionsView
                 descriptor={descriptor}
                 loading={loading}
@@ -773,6 +775,10 @@ const styles = StyleSheet.create({
   segmentLabelSelected: {
     color: colors.text,
     fontWeight: font.weight.bold,
+  },
+  optionTools: {
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
   },
   sheetContent: {
     paddingBottom: spacing.xxl,

@@ -37,12 +37,14 @@ import {
   useBackgroundPowerSetup,
 } from "../../src/background";
 import { useSystemNotificationsSetting } from "../../src/notifications/useSystemNotificationsSetting";
+import { LlmSettings } from "../../src/components/settings/LlmSettings";
 import { ShareSettings } from "../../src/components/settings/ShareSettings";
 
 type SaveState = "idle" | "saving" | "saved";
 type SettingsSection =
   | "storage"
   | "sharing"
+  | "ai"
   | "preferences"
   | "background"
   | "bot"
@@ -538,6 +540,17 @@ export default function Settings() {
             onToggle={() => toggle("sharing")}
           >
             <ShareSettings />
+          </Section>
+        ) : null}
+        {client?.permissions.can("globalSettings") ? (
+          <Section
+            title="AI assistant"
+            icon="sparkles-outline"
+            summary="Provider, API key and model"
+            open={openSection === "ai"}
+            onToggle={() => toggle("ai")}
+          >
+            <LlmSettings />
           </Section>
         ) : null}
         {dirty || errors.save ? (

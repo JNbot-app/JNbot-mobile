@@ -30,6 +30,7 @@ import {
   type ShareState,
 } from "../../../src/generated/client-contract/share";
 import { useFeedback } from "../../../src/components/AppFeedback";
+import { ShareAskAi } from "../../../src/components/share/ShareAskAi";
 
 const keyOf = pluginKey;
 const INSTALL_LABELS = { none: "Install", update: "Update", installed: "Open" } as const;
@@ -276,6 +277,7 @@ export default function ShareScreen() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
         <Header overview={overview} installState={installState} reviewed={reviewed} />
         <ShareContents overview={overview} />
+        <ShareAskAi overview={overview} load={async () => preview ?? load()} />
 
         {showCheck && preview ? (
           <View style={{ gap: spacing.sm }}>

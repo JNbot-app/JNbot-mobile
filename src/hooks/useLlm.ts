@@ -7,20 +7,25 @@ const NOT_SET_UP: LlmStatus = { configured: false };
 // One status request per connection, shared by every screen.
 const statuses = new WeakMap<JNbotClient, Promise<LlmStatus>>();
 
+const requestStatus = (client: JNbotClient) => {
+  const request = client.llm<LlmStatus>("LLM_STATUS").catch(() => NOT_SET_UP);
+  statuses.set(client, request);
+  return request;
+};
+
+/** Re-reads the status after the settings changed, so screens opened later see it. */
+export const refreshLlmStatus = (client: JNbotClient) => requestStatus(client);
+
 /**
- * The desktop's optional AI provider. Every AI control checks `configured`,
- * so users without a key never see them (the phone's own runtime has none).
+ * The backend's optional AI provider. Every AI control checks `configured`,
+ * so users without a key never see them.
  */
 export function useLlm(): LlmStatus {
   const client = useClient();
   const [status, setStatus] = useState<LlmStatus>(NOT_SET_UP);
   useEffect(() => {
     if (!client) return setStatus(NOT_SET_UP);
-    let request = statuses.get(client);
-    if (!request) {
-      request = client.llm<LlmStatus>("LLM_STATUS").catch(() => NOT_SET_UP);
-      statuses.set(client, request);
-    }
+    const request = statuses.get(client) ?? requestStatus(client);
     let active = true;
     void request.then((next) => active && setStatus(next));
     return () => {

@@ -4,7 +4,7 @@ import {
   type Address,
 } from "../generated/client-contract/messaging/Address";
 import { Messenger } from "../generated/client-contract/messaging/Messenger";
-import { llmRequestOptions } from "../generated/client-contract/llm";
+import { LLM_STREAM_EVENT, llmRequestOptions, type LlmStreamMessage } from "../generated/client-contract/llm";
 import type { ProfilePublication } from "../generated/client-contract/messaging/Protocol";
 import type {
   EndpointTransport,
@@ -407,9 +407,9 @@ export class LocalJNbotRuntime implements JNbotRuntime {
       { timeoutMs: 10_000 },
     );
   }
-  /** The phone's own backend has no AI provider, so nothing streams. */
-  subscribeLlmStream() {
-    return () => {};
+  subscribeLlmStream(listener: (message: LlmStreamMessage) => void) {
+    if (!this.messenger || this.address === null) return () => {};
+    return this.messenger.sub(LLM_STREAM_EVENT, this.address, (data) => listener(data as LlmStreamMessage));
   }
   llmAction<T = unknown>(event: string, data?: unknown): Promise<T> {
     return this.requireMessenger().request<T>("client:action", BACKEND, { event, data }, llmRequestOptions(event));
