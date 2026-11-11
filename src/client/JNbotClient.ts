@@ -4,7 +4,7 @@ import type { ActiveBot, AltWithData, MacroInfo, ScriptActionInfo } from "../sto
 import { chainPluginId } from "../generated/client-contract/chains";
 import type { LlmGenerateInput, LlmStreamMessage } from "../generated/client-contract/llm";
 import { actions, get, selectProfileReady } from "../store/store";
-import type { JNbotRuntime } from "../runtime/JNbotRuntime";
+import type { JNbotRuntime, NewPluginInput } from "../runtime/JNbotRuntime";
 import type {
   CreateProfileInput,
   AppSettingsPatch,
@@ -307,6 +307,12 @@ export class JNbotClient {
     const saved = await this.runtime.updatePluginMetadata(metadata);
     actions.setPluginMetadata(saved);
     return saved;
+  }
+
+  async createPlugin(input: NewPluginInput) {
+    const plugin = await this.runtime.createPlugin(input);
+    actions.setMacros(await this.runtime.getInstalledPlugins());
+    return plugin;
   }
 
   async getPluginCode(pluginId: string) {

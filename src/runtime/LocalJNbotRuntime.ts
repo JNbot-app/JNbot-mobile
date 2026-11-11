@@ -10,7 +10,7 @@ import type {
   EndpointTransport,
   TransportFrame,
 } from "../generated/client-contract/messaging/Transport";
-import { PUBLISHER_NAME_REQUIRED, type JNbotRuntime, type RuntimeUnsubscribe, type ServerStatus, type ShareAction } from "./JNbotRuntime";
+import { PUBLISHER_NAME_REQUIRED, type JNbotRuntime, type NewPluginInput, type RuntimeUnsubscribe, type ServerStatus, type ShareAction } from "./JNbotRuntime";
 import * as Sentry from "@sentry/react-native";
 import { EmbeddedNodeBridge } from "./EmbeddedNodeBridge";
 import type {
@@ -438,6 +438,15 @@ export class LocalJNbotRuntime implements JNbotRuntime {
       event: "UPDATE_PLUGIN_METADATA",
       data: metadata,
     });
+  }
+  async createPlugin(input: NewPluginInput): Promise<MacroInfo> {
+    const { status, message, ...plugin } = await this.requireMessenger().request<MacroInfo & { status?: string; message?: string }>(
+      "client:action",
+      BACKEND,
+      { event: "CREATE_MACRO", data: input },
+    );
+    if (status !== "success") throw new Error(message ?? "Could not create the plugin.");
+    return plugin;
   }
   savePluginCode(pluginId: string, code: string): Promise<unknown> {
     return this.requireMessenger().request("client:action", BACKEND, {

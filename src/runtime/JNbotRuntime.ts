@@ -27,6 +27,13 @@ import type {
 
 export type RuntimeUnsubscribe = () => void;
 
+export type NewPluginInput = {
+  name: string;
+  description: string;
+  language: "js" | "ts";
+  scriptType: "script" | "action";
+};
+
 export type ServerStatus = { version?: string; online?: number; max?: number; favicon?: string };
 
 /** Error message when signing needs a publisher name first; the error carries `fingerprint`. */
@@ -84,6 +91,7 @@ export interface JNbotRuntime {
   subscribeLlmStream(listener: (message: LlmStreamMessage) => void): RuntimeUnsubscribe;
   getInstalledPlugins(): Promise<MacroInfo[]>;
   updatePluginMetadata(metadata: PluginMetadata): Promise<PluginMetadata>;
+  createPlugin(input: NewPluginInput): Promise<MacroInfo>;
   savePluginCode(pluginId: string, code: string): Promise<unknown>;
   getPublicPlugins(): Promise<MacroInfo[]>;
   exportPortablePlugin(pluginId: string): Promise<PortablePluginPackage>;
