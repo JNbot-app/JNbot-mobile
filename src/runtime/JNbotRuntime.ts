@@ -102,7 +102,7 @@ export interface JNbotRuntime {
     packages: (PortablePluginPackage | string)[],
     decisions: PluginImportDecision[],
   ): Promise<PluginImportResult>;
-  /** Share links (create, manage, install) run on this phone's own backend. */
+  /** Share links; a paired desktop allows browsing and installing, not creating or managing. */
   shareAction<T>(event: ShareAction, data: unknown): Promise<T>;
   getPluginDescriptor(
     profileId: number,

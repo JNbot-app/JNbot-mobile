@@ -184,7 +184,7 @@ export default function ShareScreen() {
   const load = async () => {
     try {
       const result = await shareAction<SharePreview>("SHARE_PREVIEW", { link: id, profileKey: profileKey ?? undefined });
-      // Previews run on the phone runtime, which knows what is installed.
+      // The runtime that previews also knows what is installed.
       useShares.setState(await shareAction<ShareState>("SHARE_STATE", undefined));
       setPreview(result);
       return result;

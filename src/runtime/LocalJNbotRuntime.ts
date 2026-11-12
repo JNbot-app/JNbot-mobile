@@ -10,9 +10,10 @@ import type {
   EndpointTransport,
   TransportFrame,
 } from "../generated/client-contract/messaging/Transport";
-import { PUBLISHER_NAME_REQUIRED, type JNbotRuntime, type NewPluginInput, type RuntimeUnsubscribe, type ServerStatus, type ShareAction } from "./JNbotRuntime";
+import { type JNbotRuntime, type NewPluginInput, type RuntimeUnsubscribe, type ServerStatus, type ShareAction } from "./JNbotRuntime";
 import * as Sentry from "@sentry/react-native";
 import { EmbeddedNodeBridge } from "./EmbeddedNodeBridge";
+import { importPortablePlugins, previewPluginImports, requestShareAction } from "./backendActions";
 import type {
   CreateProfileInput,
   CreateProfileResult,
@@ -31,9 +32,7 @@ import type {
   InstanceTransferChunk,
   InstanceTransferManifest,
   PortablePluginPackage,
-  PluginImportPreview,
   PluginImportDecision,
-  PluginImportResult,
 } from "./types";
 import type { PluginMetadata } from "../features/plugins/folders";
 
@@ -468,33 +467,14 @@ export class LocalJNbotRuntime implements JNbotRuntime {
       data: { pluginId },
     });
   }
-  async previewPluginImports(
-    packages: (PortablePluginPackage | string)[],
-  ): Promise<PluginImportPreview[]> {
-    return this.requireMessenger().request("client:action", BACKEND, {
-      event: "PREVIEW_PORTABLE_PLUGINS",
-      data: { packages },
-    });
+  previewPluginImports(packages: (PortablePluginPackage | string)[]) {
+    return previewPluginImports(this.requireMessenger(), packages);
   }
-  async importPortablePlugins(
-    packages: (PortablePluginPackage | string)[],
-    decisions: PluginImportDecision[],
-  ): Promise<PluginImportResult> {
-    return this.requireMessenger().request("client:action", BACKEND, {
-      event: "IMPORT_PORTABLE_PLUGINS",
-      data: { packages, decisions },
-    });
+  importPortablePlugins(packages: (PortablePluginPackage | string)[], decisions: PluginImportDecision[]) {
+    return importPortablePlugins(this.requireMessenger(), packages, decisions);
   }
-  async shareAction<T>(event: ShareAction, data: unknown): Promise<T> {
-    const result = await this.requireMessenger().request<
-      { status?: string; data?: T; message?: string; identity?: { fingerprint?: string } }
-    >("client:action", BACKEND, { event, data });
-    if (result?.status === "publisher-name-required") {
-      throw Object.assign(new Error(PUBLISHER_NAME_REQUIRED), { fingerprint: result.identity?.fingerprint });
-    }
-    if (result?.status === "error") throw new Error(result.message || "Share link request failed");
-    // SHARE_* actions wrap their result in `data`; state and identity reads do not.
-    return (result?.status === "success" && "data" in result ? result.data : result) as T;
+  shareAction<T>(event: ShareAction, data: unknown): Promise<T> {
+    return requestShareAction<T>(this.requireMessenger(), event, data);
   }
   getPluginDescriptor(
     profileId: number,

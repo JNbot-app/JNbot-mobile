@@ -43,7 +43,7 @@ import type {
 } from "../runtime/types";
 import type { ProfilePublication } from "../generated/client-contract/messaging/Protocol";
 import type { ShareState } from "../generated/client-contract/share";
-import { useShares } from "../features/shareStore";
+import { resetShareStores, useShares } from "../features/shareStore";
 import type {
   AltUpdateRequestPayload,
   BotKickedPayload,
@@ -84,7 +84,7 @@ type ConnectionContextValue = {
     packages: (PortablePluginPackage | string)[],
     decisions: PluginImportDecision[],
   ) => Promise<PluginImportResult>;
-  /** Runs a share-link action on the phone runtime; installs refresh plugins and profiles. */
+  /** Runs a share-link action on the active runtime; installs refresh plugins and profiles. */
   shareAction: <T>(event: ShareAction, data: unknown) => Promise<T>;
   importFullInstance: (input: InstanceImportInput) => Promise<void>;
   importDesktopInstance: (pairingUrl: string, onStage: (stage: InstanceTransferStage, percent?: number) => void) => Promise<void>;
@@ -213,8 +213,9 @@ export function ConnectionProvider({
     ) => {
       teardown();
       // A target switch must never leave the previous target's profile selected
-      // while the new runtime is still loading its own profile catalog.
+      // (or its shares) while the new runtime is still loading its own catalog.
       actions.reset();
+      resetShareStores();
       modeRef.current = nextMode;
       setMode(nextMode);
       const nextRuntime =
@@ -404,15 +405,15 @@ export function ConnectionProvider({
     [hydrateBootstrap],
   );
 
+  const requireRuntime = useCallback(() => {
+    if (!runtimeRef.current) throw new Error("Connect to JNbot first.");
+    return runtimeRef.current;
+  }, []);
+
+  // Plugin imports and shares run on the active runtime (this phone or the paired desktop).
   const previewPortablePlugins = useCallback(
-    async (packages: (PortablePluginPackage | string)[]) => {
-      if (modeRef.current === "remote") await start({ kind: "local" }, "local");
-      const activeRuntime = runtimeRef.current;
-      if (!activeRuntime)
-        throw new Error("The phone runtime is not ready yet.");
-      return activeRuntime.previewPluginImports(packages);
-    },
-    [start],
+    async (packages: (PortablePluginPackage | string)[]) => requireRuntime().previewPluginImports(packages),
+    [requireRuntime],
   );
 
   const importPortablePlugins = useCallback(
@@ -420,28 +421,17 @@ export function ConnectionProvider({
       packages: (PortablePluginPackage | string)[],
       decisions: PluginImportDecision[],
     ) => {
-      if (modeRef.current === "remote") await start({ kind: "local" }, "local");
-      const activeRuntime = runtimeRef.current;
-      if (!activeRuntime)
-        throw new Error("The phone runtime is not ready yet.");
+      const activeRuntime = requireRuntime();
       const result = await activeRuntime.importPortablePlugins(packages, decisions);
       actions.setMacros(await activeRuntime.getInstalledPlugins());
       return result;
     },
-    [start],
+    [requireRuntime],
   );
 
   const shareAction = useCallback(
     async <T,>(event: ShareAction, data: unknown): Promise<T> => {
-      if (modeRef.current === "remote") {
-        // Browsing and installing move to the phone like plugin imports; managing shares needs it already.
-        if (!["SHARE_PREVIEW", "SHARE_INSTALL", "SHARE_MARKET", "SHARE_REPORT"].includes(event))
-          throw new Error("Switch to this phone to share plugins and profiles.");
-        await start({ kind: "local" }, "local");
-      }
-      const activeRuntime = runtimeRef.current;
-      if (!activeRuntime)
-        throw new Error("The phone runtime is not ready yet.");
+      const activeRuntime = requireRuntime();
       const result = await activeRuntime.shareAction<T>(event, data);
       if (event === "SHARE_INSTALL") {
         useShares.setState((result as { state: ShareState }).state);
@@ -450,7 +440,7 @@ export function ConnectionProvider({
       }
       return result;
     },
-    [start, hydrateBootstrap],
+    [requireRuntime, hydrateBootstrap],
   );
 
   const installMarketplaceProfile = useCallback(
@@ -511,6 +501,7 @@ export function ConnectionProvider({
     setHasTarget(false);
     setStatus("disconnected");
     actions.reset();
+    resetShareStores();
   }, [teardown]);
 
   const syncState = useCallback(async () => {

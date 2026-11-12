@@ -12,7 +12,8 @@ import type {
   EndpointTransport,
   TransportFrame,
 } from "../generated/client-contract/messaging/Transport";
-import type { JNbotRuntime, NewPluginInput, ServerStatus } from "./JNbotRuntime";
+import type { JNbotRuntime, NewPluginInput, ServerStatus, ShareAction } from "./JNbotRuntime";
+import { importPortablePlugins, previewPluginImports, requestShareAction } from "./backendActions";
 import {
   REMOTE_PROTOCOL_VERSION,
   type PairingCredentials,
@@ -31,9 +32,7 @@ import {
   type InstanceImportInput,
   type InstanceImportResult,
   type PortablePluginPackage,
-  type PluginImportPreview,
   type PluginImportDecision,
-  type PluginImportResult,
   type InstanceTransferChunk,
   type InstanceTransferRequestResult,
 } from "./types";
@@ -492,21 +491,14 @@ export class RemoteJNbotRuntime implements JNbotRuntime {
     });
   }
 
-  async previewPluginImports(
-    _packages: (PortablePluginPackage | string)[],
-  ): Promise<PluginImportPreview[]> {
-    throw new Error("Plugin imports can only be reviewed on this phone.");
+  previewPluginImports(packages: (PortablePluginPackage | string)[]) {
+    return previewPluginImports(this.requireMessenger(), packages);
   }
-
-  async importPortablePlugins(
-    _packages: (PortablePluginPackage | string)[],
-    _decisions: PluginImportDecision[],
-  ): Promise<PluginImportResult> {
-    throw new Error("Plugins can only be installed on this phone.");
+  importPortablePlugins(packages: (PortablePluginPackage | string)[], decisions: PluginImportDecision[]) {
+    return importPortablePlugins(this.requireMessenger(), packages, decisions);
   }
-
-  async shareAction<T>(): Promise<T> {
-    throw new Error("Share links work with plugins and profiles on this phone.");
+  shareAction<T>(event: ShareAction, data: unknown): Promise<T> {
+    return requestShareAction<T>(this.requireMessenger(), event, data);
   }
 
   getPluginDescriptor(
