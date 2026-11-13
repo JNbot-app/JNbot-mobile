@@ -8,7 +8,6 @@ import React, {
   useState,
 } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -25,7 +24,6 @@ import { NativeIcon } from '../NativeIcon';
 import { type Choice } from '../PluginOptions';
 import { PluginHeader } from './PluginHeader';
 import { PluginDetailsView } from './PluginDetailsView';
-import { PluginCodeReviewButton } from './PluginCodeReview';
 import { PluginOptionsView } from './PluginOptionsView';
 import { PickerModal } from '../PickerField';
 import { PresetBar, presetChoices } from './PresetBar';
@@ -58,6 +56,8 @@ export type PluginTab = 'options' | 'details';
 type DrawerContextValue = {
   openPlugin: (plugin: MacroInfo, initialView?: PluginTab) => Promise<void>;
   openProfileScript: (script: ProfileScriptInfo, initialView?: PluginTab) => Promise<void>;
+  /** Stops the plugin's running instances, then deletes it. */
+  deletePlugin: (plugin: MacroInfo) => Promise<void>;
 };
 
 const DrawerContext = createContext<DrawerContextValue | null>(null);
@@ -304,7 +304,7 @@ export function AutomationDrawerProvider({ children }: { children: React.ReactNo
   );
 
   return (
-    <DrawerContext.Provider value={{ openPlugin, openProfileScript }}>
+    <DrawerContext.Provider value={{ openPlugin, openProfileScript, deletePlugin }}>
       {children}
       <AutomationDrawer
         plugin={plugin}
@@ -317,7 +317,6 @@ export function AutomationDrawerProvider({ children }: { children: React.ReactNo
         error={error}
         instanceCount={instances.length}
         onClose={close}
-        onDelete={deletePlugin}
         onRun={(presetId) => void run(presetId)}
         onFlush={flush}
         onStop={() => {
@@ -354,7 +353,6 @@ function AutomationDrawer({
   error,
   instanceCount,
   onClose,
-  onDelete,
   onRun,
   onFlush,
   onStop,
@@ -370,7 +368,6 @@ function AutomationDrawer({
   error: string | null;
   instanceCount: number;
   onClose: () => void;
-  onDelete: (plugin: MacroInfo) => Promise<void>;
   onRun: (presetId?: string) => void;
   onFlush: () => Promise<void>;
   onStop: () => void;
@@ -387,8 +384,6 @@ function AutomationDrawer({
   const router = useRouter();
   const [values, setValues] = useState<Record<string, unknown>>({});
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
-  const [codeReviewOpen, setCodeReviewOpen] = useState(false);
-  const [deleting, setDeleting] = useState(false)
   const [pickingPreset, setPickingPreset] = useState(false);
   const running = instanceCount > 0;
   const stored = useStore((state) =>
@@ -473,26 +468,11 @@ function AutomationDrawer({
     );
   };
 
-  const confirmDelete = () => {
-    Alert.alert(
-      'Delete plugin?',
-      `This will remove ${plugin?.name ?? 'this plugin'} from the device and its saved settings.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            if (!plugin || deleting) return;
-            setDeleting(true);
-            void onDelete(plugin).catch((cause: unknown) => {
-              setDeleting(false);
-              Alert.alert('Could not delete plugin', cause instanceof Error ? cause.message : 'Try again.');
-            });
-          },
-        },
-      ],
-    );
+  /** The editor screens are routes, so the sheet closes before they open. */
+  const openEditor = (pathname: '/(app)/plugin/code/[pluginId]' | '/(app)/plugin/settings/[pluginId]') => {
+    if (!plugin) return;
+    onClose();
+    router.push({ pathname, params: { pluginId: plugin.pluginId } });
   };
 
   if (!plugin) return null;
@@ -521,15 +501,6 @@ function AutomationDrawer({
           <PluginHeader
             plugin={plugin}
             onClose={onClose}
-            onReviewCode={
-              !profileScript &&
-                (plugin.language === 'js' || plugin.language === 'ts')
-                ? () => {
-                  onChangeTab('details');
-                  setCodeReviewOpen(true);
-                }
-                : undefined
-            }
             onTogglePin={!profileScript && plugin ? () => void togglePin(plugin.pluginId) : undefined}
             isPinned={isPinned}
           />
@@ -640,16 +611,17 @@ function AutomationDrawer({
             {activeTab === 'details' && !profileScript ? (
               <View style={styles.detailActions}>
                 {plugin.language === 'js' || plugin.language === 'ts' ? (
-                  <PluginCodeReviewButton
-                    key={plugin.pluginId}
-                    plugin={plugin}
-                    open={codeReviewOpen}
-                    onOpenChange={setCodeReviewOpen}
-                    compact
+                  <Button
+                    title="Code"
+                    variant="secondary"
+                    small
+                    style={styles.detailAction}
+                    onPress={() => openEditor('/(app)/plugin/code/[pluginId]')}
+                    icon={<NativeIcon sf="chevron.left.forwardslash.chevron.right" material="code" size={18} color={colors.text} />}
                   />
                 ) : plugin.language === 'recording' ? (
                   <Button
-                    title="View steps"
+                    title="Steps"
                     variant="secondary"
                     small
                     style={styles.detailAction}
@@ -658,6 +630,16 @@ function AutomationDrawer({
                       router.push({ pathname: '/(app)/recording/[pluginId]', params: { pluginId: plugin.pluginId } });
                     }}
                     icon={<NativeIcon sf="list.bullet" material="format-list-bulleted" size={18} color={colors.text} />}
+                  />
+                ) : null}
+                {canUsePlugins ? (
+                  <Button
+                    title="Edit"
+                    variant="secondary"
+                    small
+                    style={styles.detailAction}
+                    onPress={() => openEditor('/(app)/plugin/settings/[pluginId]')}
+                    icon={<NativeIcon sf="slider.horizontal.3" material="tune" size={18} color={colors.text} />}
                   />
                 ) : null}
                 {canShare ? (
@@ -673,16 +655,6 @@ function AutomationDrawer({
                     icon={<NativeIcon sf="square.and.arrow.up" material="share" size={18} color={colors.text} />}
                   />
                 ) : null}
-                <Button
-                  title="Delete"
-                  variant="danger"
-                  small
-                  style={styles.detailAction}
-                  loading={deleting}
-                  disabled={deleting || !canUsePlugins}
-                  onPress={confirmDelete}
-                  icon={<NativeIcon sf="trash" material="delete" size={18} color={colors.danger} />}
-                />
               </View>
             ) : null}
             <Button

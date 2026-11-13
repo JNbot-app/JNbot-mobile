@@ -244,6 +244,11 @@ export class JNbotClient {
     return this.profileAction("STOP_ALL", chainPluginId(chainId));
   }
 
+  /** Skip the join delay for a queued bot. */
+  joinBotNow(botId: number) {
+    return this.profileAction<boolean>("JOIN_BOT_NOW", { botId });
+  }
+
   restartScript(instanceId?: number) {
     return this.profileAction("RESTART_ALL", instanceId);
   }
@@ -338,6 +343,12 @@ export class JNbotClient {
     const result = await this.runtime.savePluginCode(pluginId, code);
     if (pluginSource(result) !== code)
       throw new Error("The runtime did not confirm the save. Your edits are still here.");
+  }
+
+  /** Like the desktop's `savePlugin`: the backend does not broadcast info saves, so update the list here. */
+  async savePluginInfo(info: MacroInfo) {
+    await this.runtime.savePluginInfo(info);
+    actions.setMacros(get().macros.list.map((item) => (item.pluginId === info.pluginId ? info : item)));
   }
 
   async deletePlugin(plugin: MacroInfo) {

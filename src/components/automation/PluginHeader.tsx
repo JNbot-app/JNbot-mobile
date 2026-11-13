@@ -42,7 +42,6 @@ export function getPluginIconConfig(plugin: MacroInfo) {
 interface PluginHeaderProps {
   plugin: MacroInfo;
   onClose?: () => void;
-  onReviewCode?: () => void;
   showClose?: boolean;
   onTogglePin?: () => void;
   isPinned?: boolean;
@@ -51,7 +50,6 @@ interface PluginHeaderProps {
 export const PluginHeader: React.FC<PluginHeaderProps> = ({
   plugin,
   onClose,
-  onReviewCode,
   showClose = true,
   onTogglePin,
   isPinned = false,

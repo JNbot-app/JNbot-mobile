@@ -13,7 +13,7 @@ import type {
 import { type JNbotRuntime, type NewPluginInput, type RuntimeUnsubscribe, type ServerStatus, type ShareAction } from "./JNbotRuntime";
 import * as Sentry from "@sentry/react-native";
 import { EmbeddedNodeBridge } from "./EmbeddedNodeBridge";
-import { importPortablePlugins, previewPluginImports, requestShareAction } from "./backendActions";
+import { importPortablePlugins, previewPluginImports, requestShareAction, savePluginCode, savePluginInfo } from "./backendActions";
 import type {
   CreateProfileInput,
   CreateProfileResult,
@@ -448,10 +448,10 @@ export class LocalJNbotRuntime implements JNbotRuntime {
     return plugin;
   }
   savePluginCode(pluginId: string, code: string): Promise<unknown> {
-    return this.requireMessenger().request("client:action", BACKEND, {
-      event: "SAVE_MACRO",
-      data: { pluginId, code: { code } },
-    });
+    return savePluginCode(this.requireMessenger(), pluginId, code);
+  }
+  savePluginInfo(info: MacroInfo): Promise<unknown> {
+    return savePluginInfo(this.requireMessenger(), info);
   }
   async getPublicPlugins() {
     const result = await this.requireMessenger().request<any>(

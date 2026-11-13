@@ -178,6 +178,12 @@ export default function ChainEditor() {
           <NativeIcon sf="chevron.right" material="chevron-right" size={18} color={colors.textFaint} />
         </PressableCard>
         <ShareUpdateRow kind="chain" localRef={chainId} />
+        <PressableCard accessibilityLabel="Setup code" onPress={() => router.push({ pathname: '/(app)/chains/setup/[chainId]', params: { chainId } })} style={styles.settings}>
+          <NativeIcon sf="chevron.left.forwardslash.chevron.right" material="code" size={20} color={colors.textMuted} />
+          <Txt variant="heading" style={{ flex: 1 }}>Setup code</Txt>
+          <Txt variant="muted">{chain.setup?.trim() ? "In use" : "Optional"}</Txt>
+          <NativeIcon sf="chevron.right" material="chevron-right" size={18} color={colors.textFaint} />
+        </PressableCard>
         {options.description ? <Txt variant="muted">{options.description}</Txt> : null}
         <View style={styles.intro}><Txt variant="heading">Steps</Txt><Txt variant="muted">Each selected account runs these from top to bottom. Long-press a step to reorder.</Txt></View>
         {chain.chains.length ? <ChainStepList count={chain.chains.length} enabled={canUseScripts} onMove={(from, to) => void save(moveChainStep(chain, from, to))}>{chain.chains.map((step, index) => {

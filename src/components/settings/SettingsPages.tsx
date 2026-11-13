@@ -57,7 +57,7 @@ export function InlineError({ message }: { message?: string | null }) {
   );
 }
 
-function PickerRow({ label, help, ...props }: { label: string; help?: string } & React.ComponentProps<typeof PickerField>) {
+export function PickerRow({ label, help, ...props }: { label: string; help?: string } & React.ComponentProps<typeof PickerField>) {
   return (
     <View style={styles.field}>
       <Txt variant="label">{label}</Txt>

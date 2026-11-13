@@ -13,7 +13,7 @@ import type {
   TransportFrame,
 } from "../generated/client-contract/messaging/Transport";
 import type { JNbotRuntime, NewPluginInput, ServerStatus, ShareAction } from "./JNbotRuntime";
-import { importPortablePlugins, previewPluginImports, requestShareAction } from "./backendActions";
+import { importPortablePlugins, previewPluginImports, requestShareAction, savePluginCode, savePluginInfo } from "./backendActions";
 import {
   REMOTE_PROTOCOL_VERSION,
   type PairingCredentials,
@@ -471,8 +471,11 @@ export class RemoteJNbotRuntime implements JNbotRuntime {
     if (status !== "success") throw new Error(message ?? "Could not create the plugin.");
     return plugin;
   }
-  async savePluginCode(_pluginId: string, _code: string): Promise<never> {
-    throw new Error("Desktop plugins can only be edited on the desktop.");
+  savePluginCode(pluginId: string, code: string): Promise<unknown> {
+    return savePluginCode(this.requireMessenger(), pluginId, code);
+  }
+  savePluginInfo(info: MacroInfo): Promise<unknown> {
+    return savePluginInfo(this.requireMessenger(), info);
   }
 
   async getPublicPlugins(): Promise<MacroInfo[]> {

@@ -64,7 +64,10 @@ export default function AppLayout() {
         <Stack.Screen name="chains/[chainId]" />
         <Stack.Screen name="chains/settings/[chainId]" />
         <Stack.Screen name="chains/step/[chainId]" />
+        <Stack.Screen name="chains/setup/[chainId]" />
         <Stack.Screen name="recording/[pluginId]" />
+        <Stack.Screen name="plugin/code/[pluginId]" />
+        <Stack.Screen name="plugin/settings/[pluginId]" />
       </Stack>
       {showReconnectScreen ? <RemoteReconnectScreen /> : null}
     </>

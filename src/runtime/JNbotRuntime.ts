@@ -93,6 +93,7 @@ export interface JNbotRuntime {
   updatePluginMetadata(metadata: PluginMetadata): Promise<PluginMetadata>;
   createPlugin(input: NewPluginInput): Promise<MacroInfo>;
   savePluginCode(pluginId: string, code: string): Promise<unknown>;
+  savePluginInfo(info: MacroInfo): Promise<unknown>;
   getPublicPlugins(): Promise<MacroInfo[]>;
   exportPortablePlugin(pluginId: string): Promise<PortablePluginPackage>;
   previewPluginImports(

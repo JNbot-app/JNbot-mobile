@@ -1,6 +1,7 @@
 import { BACKEND } from "../generated/client-contract/messaging/Address";
 import type { Messenger } from "../generated/client-contract/messaging/Messenger";
 import { PUBLISHER_NAME_REQUIRED, type ShareAction } from "./JNbotRuntime";
+import type { MacroInfo } from "../store/types";
 import type { PluginImportDecision, PluginImportPreview, PluginImportResult, PortablePluginPackage } from "./types";
 
 /**
@@ -32,4 +33,13 @@ export function importPortablePlugins(
   decisions: PluginImportDecision[],
 ): Promise<PluginImportResult> {
   return messenger.request("client:action", BACKEND, { event: "IMPORT_PORTABLE_PLUGINS", data: { packages, decisions } });
+}
+
+/** Same events the desktop code editor uses: SAVE_MACRO for the source, SAVE_MACRO_INFO for name, banner and options. */
+export function savePluginCode(messenger: Messenger, pluginId: string, code: string): Promise<unknown> {
+  return messenger.request("client:action", BACKEND, { event: "SAVE_MACRO", data: { pluginId, code: { code } } });
+}
+
+export function savePluginInfo(messenger: Messenger, info: MacroInfo): Promise<unknown> {
+  return messenger.request("client:action", BACKEND, { event: "SAVE_MACRO_INFO", data: info });
 }

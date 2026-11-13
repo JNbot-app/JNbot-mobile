@@ -47,6 +47,7 @@ export function useCommands() {
           ),
           value,
         }),
+      joinBotNow: (bot: ActiveBot) => client.joinBotNow(bot.botId),
       botAction: (bot: ActiveBot, action: BotAction, data?: unknown[]) =>
         client.botAction(bot, action, data),
       requestBotAction: <T>(
