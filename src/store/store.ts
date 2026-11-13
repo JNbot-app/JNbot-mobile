@@ -28,6 +28,7 @@ import type {
 } from "../runtime/types";
 import type { ProfilePublication } from "../generated/client-contract/messaging/Protocol";
 import type { ProfileSnapshot } from "../generated/client-contract/mobileClientContract";
+import { presetOptionPath, presetValues } from "../generated/client-contract/pluginPresets";
 import type {
   AltUpdateRequestPayload,
   ConsoleLogEntry,
@@ -739,12 +740,12 @@ export const actions = {
     }),
   updatePluginOption: (pluginId: string, optionId: string, value: unknown) =>
     actions.applySettingsPatches({
-      path: ["scripts", pluginId, optionId],
+      path: presetOptionPath(useStore.getState().settings.scripts?.[pluginId], pluginId, optionId),
       value,
     }),
   setPluginDescriptor: (descriptor: PluginRunDescriptor) =>
     set((st) => {
-      const existingSettings = st.settings.scripts?.[descriptor.info.pluginId] ?? {};
+      const existingSettings = presetValues(st.settings.scripts?.[descriptor.info.pluginId]);
       const mergedDescriptor = {
         ...descriptor,
         values: {

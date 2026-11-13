@@ -52,14 +52,16 @@ export default function ChainSettings() {
   const [options, setOptions] = useState<ChainOptions | null>(() => creating
     ? { ...DEFAULT_CHAIN_OPTIONS, name: "", gamemode: "" }
     : chain ? getChainOptions(settings, chain) : null);
+  // Values of the chain's own options, kept apart from the run settings above.
+  const [values, setValues] = useState<Record<string, unknown>>(() => ({ ...settings.scripts[chainId] }));
   const [selectionOpen, setSelectionOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
   const update = (id: string, value: unknown) => {
-    if (!isChainOptionId(id)) return;
     setError("");
-    setOptions((current) => current ? setChainOption(current, id, value) : current);
+    if (isChainOptionId(id)) setOptions((current) => current ? setChainOption(current, id, value) : current);
+    else setValues((current) => ({ ...current, [id]: value }));
   };
 
   const save = async () => {
@@ -76,7 +78,7 @@ export default function ChainSettings() {
         await client.updateSettings(createChainPatches({ id, name: next.name, chains: [] }, next));
         router.replace({ pathname: '/(app)/chains/[chainId]', params: { chainId: id } });
       } else {
-        await client.updateSettings(saveChainOptionsPatch(chainId, next));
+        await client.updateSettings(saveChainOptionsPatch(chainId, { ...values, ...next }));
         router.back();
       }
     } catch (error) {
@@ -96,10 +98,10 @@ export default function ChainSettings() {
   if ((!creating && !chain) || !options) return <Screen title="Chain settings" back><EmptyState title="Chain not found" subtitle="It may have been removed from this profile." /></Screen>;
   if (!canUseScripts) return <Screen title="Chain settings" back><EmptyState title="Scripts unavailable" subtitle="This access link does not permit editing chains." /></Screen>;
 
-  const renderOptions = (section: (typeof optionSections)[number]) => section.options.map((option) => <PluginOptionInput
+  const renderOptions = (section: { options: SerializableOption[] }) => section.options.map((option) => <PluginOptionInput
     key={option.id}
-    option={option.id === "gamemode" ? { ...option, options: gamemodeOptions } : option}
-    value={isChainOptionId(option.id) ? options[option.id] : undefined}
+    option={option.type === "gamemodeSelect" ? { ...option, options: gamemodeOptions } : option}
+    value={isChainOptionId(option.id) ? options[option.id] : values[option.id] ?? option.defaultValue}
     altOptions={altOptions}
     tagOptions={tagOptions}
     onChange={(value) => update(option.id, value)}
@@ -110,6 +112,12 @@ export default function ChainSettings() {
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.options}>{renderOptions(optionSections[0])}</View>
         {error ? <Txt accessibilityRole="alert" style={{ color: colors.danger }}>{error}</Txt> : null}
+        {chain?.config?.map((section) => (
+          <View key={section.name} style={styles.options}>
+            <Txt variant="heading">{section.name}</Txt>
+            {renderOptions(section)}
+          </View>
+        ))}
         <Pressable accessibilityRole="button" accessibilityState={{ expanded: selectionOpen }} onPress={() => setSelectionOpen(!selectionOpen)} style={styles.selection}>
           <Txt variant="heading">Account selection</Txt>
           <NativeIcon sf={selectionOpen ? "chevron.up" : "chevron.down"} material={selectionOpen ? "expand-less" : "expand-more"} size={20} color={colors.textMuted} />

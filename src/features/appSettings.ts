@@ -116,6 +116,7 @@ export function appSettingsDraft(
     autoResourcePackAccept: settings.autoResourcePackAccept !== false,
     render_distance: Number(settings.render_distance ?? 12),
     reduced_events: settings.reduced_events === true,
+    captcha_prompt: settings.captcha_prompt === true,
     kickBehaviour: normalizeKickBehaviorConfig(settings.kickBehaviour),
   };
 

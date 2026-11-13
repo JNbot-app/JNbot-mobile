@@ -8,7 +8,6 @@ import React, {
   useState,
 } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -25,8 +24,15 @@ import { NativeIcon } from '../NativeIcon';
 import { type Choice } from '../PluginOptions';
 import { PluginHeader } from './PluginHeader';
 import { PluginDetailsView } from './PluginDetailsView';
-import { PluginCodeReviewButton } from './PluginCodeReview';
 import { PluginOptionsView } from './PluginOptionsView';
+import { PickerModal } from '../PickerField';
+import { PresetBar, presetChoices } from './PresetBar';
+import {
+  MAX_SCRIPT_INSTANCES,
+  presetOptionPath,
+  presetValues,
+  selectedPresetId,
+} from '../../generated/client-contract/pluginPresets';
 import { useClient } from '../../net/ConnectionProvider';
 import { useCommands } from '../../hooks/useCommands';
 import { usePluginPin } from '../../hooks/usePluginPin';
@@ -50,9 +56,18 @@ export type PluginTab = 'options' | 'details';
 type DrawerContextValue = {
   openPlugin: (plugin: MacroInfo, initialView?: PluginTab) => Promise<void>;
   openProfileScript: (script: ProfileScriptInfo, initialView?: PluginTab) => Promise<void>;
+  /** Stops the plugin's running instances, then deletes it. */
+  deletePlugin: (plugin: MacroInfo) => Promise<void>;
 };
 
 const DrawerContext = createContext<DrawerContextValue | null>(null);
+
+/** Settings patches for pending option edits, inside the plugin's selected preset. */
+const optionPatches = (pluginId: string, pending: Map<string, unknown>): SettingsPatch[] =>
+  Array.from(pending, ([optionId, value]) => ({
+    path: presetOptionPath(useStore.getState().settings.scripts?.[pluginId], pluginId, optionId),
+    value,
+  }));
 
 export function AutomationDrawerProvider({ children }: { children: React.ReactNode }) {
   const client = useClient();
@@ -86,12 +101,8 @@ export function AutomationDrawerProvider({ children }: { children: React.ReactNo
       plugin?.id ||
       activeTargetIdRef.current;
     if (!targetId || !client || pendingPatchesRef.current.size === 0) return;
-    const entries = Array.from(pendingPatchesRef.current.entries());
+    const patches = optionPatches(targetId, pendingPatchesRef.current);
     pendingPatchesRef.current.clear();
-    const patches: SettingsPatch[] = entries.map(([optionId, value]) => ({
-      path: ['scripts', targetId, optionId],
-      value,
-    }));
     try {
       await client.updateSettings(patches);
     } catch (err) {
@@ -109,15 +120,9 @@ export function AutomationDrawerProvider({ children }: { children: React.ReactNo
         debounceTimerRef.current = null;
       }
       if (pendingPatchesRef.current.size > 0 && activeTargetIdRef.current && client) {
-        const prevTargetId = activeTargetIdRef.current;
-        const entries = Array.from(pendingPatchesRef.current.entries());
+        const patches = optionPatches(activeTargetIdRef.current, pendingPatchesRef.current);
         pendingPatchesRef.current.clear();
-        void client.updateSettings(
-          entries.map(([optionId, value]) => ({
-            path: ['scripts', prevTargetId, optionId],
-            value,
-          })),
-        );
+        void client.updateSettings(patches);
       }
 
       const initialTargetId = initial.pluginId || initial.id || initial.name;
@@ -140,7 +145,7 @@ export function AutomationDrawerProvider({ children }: { children: React.ReactNo
           ...result,
           values: {
             ...result.values,
-            ...currentStoreSettings,
+            ...presetValues(currentStoreSettings),
           },
         };
 
@@ -162,15 +167,9 @@ export function AutomationDrawerProvider({ children }: { children: React.ReactNo
         debounceTimerRef.current = null;
       }
       if (pendingPatchesRef.current.size > 0 && activeTargetIdRef.current && client) {
-        const targetId = activeTargetIdRef.current;
-        const entries = Array.from(pendingPatchesRef.current.entries());
+        const patches = optionPatches(activeTargetIdRef.current, pendingPatchesRef.current);
         pendingPatchesRef.current.clear();
-        void client.updateSettings(
-          entries.map(([optionId, value]) => ({
-            path: ['scripts', targetId, optionId],
-            value,
-          })),
-        );
+        void client.updateSettings(patches);
       }
     };
   }, [client]);
@@ -243,26 +242,26 @@ export function AutomationDrawerProvider({ children }: { children: React.ReactNo
     close();
   }, [activeScripts, canUsePlugins, client, close, commands]);
 
-  const running =
-    !!plugin &&
-    Object.values(activeScripts).some(
-      (script) =>
-        script.scriptId === plugin.pluginId ||
-        script.name === plugin.name,
-    );
+  const instances = plugin
+    ? Object.values(activeScripts).filter(
+        (script) =>
+          script.scriptId === plugin.pluginId ||
+          script.name === plugin.name,
+      )
+    : [];
 
   const errors = plugin
     ? optionErrors[plugin.pluginId] ?? optionErrors[plugin.name]
     : undefined;
 
-  const run = async () => {
+  const run = async (presetId?: string) => {
     if (!descriptor?.info || !commands || loading || !canUseScripts || !canUseAccounts) return;
     setLoading(true);
     setError(null);
     try {
       await flush();
       await executeWithMonetization('script_start', () =>
-        commands.runPlugin(descriptor.info),
+        commands.runPlugin(descriptor.info, presetId),
       );
       close();
     } catch (cause) {
@@ -305,7 +304,7 @@ export function AutomationDrawerProvider({ children }: { children: React.ReactNo
   );
 
   return (
-    <DrawerContext.Provider value={{ openPlugin, openProfileScript }}>
+    <DrawerContext.Provider value={{ openPlugin, openProfileScript, deletePlugin }}>
       {children}
       <AutomationDrawer
         plugin={plugin}
@@ -316,19 +315,13 @@ export function AutomationDrawerProvider({ children }: { children: React.ReactNo
         onChangeTab={setActiveTab}
         loading={loading}
         error={error}
-        running={running}
+        instanceCount={instances.length}
         onClose={close}
-        onDelete={deletePlugin}
-        onRun={() => void run()}
+        onRun={(presetId) => void run(presetId)}
+        onFlush={flush}
         onStop={() => {
-          if (!plugin || !canUseScripts) return;
-          Object.values(activeScripts)
-            .filter(
-              (script) =>
-                script.scriptId === plugin.pluginId ||
-                script.name === plugin.name,
-            )
-            .forEach((script) => commands?.stopScript(script.instanceId));
+          if (!canUseScripts) return;
+          instances.forEach((script) => commands?.stopScript(script.instanceId));
           close();
         }}
         onChange={handleOptionChange}
@@ -344,6 +337,9 @@ export function useAutomationDrawer() {
 }
 
 import { dependencyKey, isRecord, resolveOptionValue } from './optionHelpers';
+import { LlmPrompt, type LlmPromptProps } from '../LlmPrompt';
+import { LlmOptionChanges } from '../LlmOptionChanges';
+import type { LlmOptionsResult } from '../../generated/client-contract/llm';
 export { resolveOptionValue };
 
 function AutomationDrawer({
@@ -355,10 +351,10 @@ function AutomationDrawer({
   onChangeTab,
   loading,
   error,
-  running,
+  instanceCount,
   onClose,
-  onDelete,
   onRun,
+  onFlush,
   onStop,
   onChange,
 }: {
@@ -370,10 +366,10 @@ function AutomationDrawer({
   onChangeTab: (tab: PluginTab) => void;
   loading: boolean;
   error: string | null;
-  running: boolean;
+  instanceCount: number;
   onClose: () => void;
-  onDelete: (plugin: MacroInfo) => Promise<void>;
-  onRun: () => void;
+  onRun: (presetId?: string) => void;
+  onFlush: () => Promise<void>;
   onStop: () => void;
   onChange: (option: SerializableOption, value: unknown) => void;
 }) {
@@ -388,8 +384,15 @@ function AutomationDrawer({
   const router = useRouter();
   const [values, setValues] = useState<Record<string, unknown>>({});
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
-  const [codeReviewOpen, setCodeReviewOpen] = useState(false);
-  const [deleting, setDeleting] = useState(false)
+  const [pickingPreset, setPickingPreset] = useState(false);
+  const running = instanceCount > 0;
+  const stored = useStore((state) =>
+    plugin ? state.settings.scripts?.[plugin.pluginId] : undefined,
+  );
+  const storedRef = useRef(stored);
+  storedRef.current = stored;
+  const selectedPreset = selectedPresetId(stored);
+  const runChoices = useMemo(() => presetChoices(stored), [stored]);
 
   const allOptions = useMemo(
     () => descriptor?.sections.flatMap((section) => section.options) ?? [],
@@ -405,6 +408,11 @@ function AutomationDrawer({
     () => altTags.map((tag) => ({ label: tag.name, value: tag.id })),
     [altTags],
   );
+
+  // Switching presets swaps the form to the new preset's values.
+  useEffect(() => {
+    setValues(presetValues(storedRef.current));
+  }, [selectedPreset]);
 
   useEffect(() => {
     setValues(descriptor?.values ?? {});
@@ -438,26 +446,33 @@ function AutomationDrawer({
     onChange(option, persisted);
   };
 
-  const confirmDelete = () => {
-    Alert.alert(
-      'Delete plugin?',
-      `This will remove ${plugin?.name ?? 'this plugin'} from the device and its saved settings.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            if (!plugin || deleting) return;
-            setDeleting(true);
-            void onDelete(plugin).catch((cause: unknown) => {
-              setDeleting(false);
-              Alert.alert('Could not delete plugin', cause instanceof Error ? cause.message : 'Try again.');
-            });
-          },
-        },
-      ],
+  const client = useClient();
+  // Same as the desktop: the AI suggests values (matched to this profile's
+  // real gamemodes, alts and tags) and the user reviews them before applying.
+  const describeSettings: LlmPromptProps['onSubmit'] = async (description, run) => {
+    if (!plugin) return undefined;
+    const result = await run<LlmOptionsResult>({ event: 'LLM_GENERATE', input: { kind: 'options', description, pluginId: plugin.pluginId } });
+    if (!result) return undefined;
+    return (dismiss) => (
+      <LlmOptionChanges
+        result={result}
+        onDiscard={dismiss}
+        onApply={() => {
+          for (const [id, value] of Object.entries(result.values)) {
+            const option = allOptions.find((item) => item.id === id);
+            if (option) update(option, value);
+          }
+          dismiss();
+        }}
+      />
     );
+  };
+
+  /** The editor screens are routes, so the sheet closes before they open. */
+  const openEditor = (pathname: '/(app)/plugin/code/[pluginId]' | '/(app)/plugin/settings/[pluginId]') => {
+    if (!plugin) return;
+    onClose();
+    router.push({ pathname, params: { pluginId: plugin.pluginId } });
   };
 
   if (!plugin) return null;
@@ -486,15 +501,6 @@ function AutomationDrawer({
           <PluginHeader
             plugin={plugin}
             onClose={onClose}
-            onReviewCode={
-              !profileScript &&
-                (plugin.language === 'js' || plugin.language === 'ts')
-                ? () => {
-                  onChangeTab('details');
-                  setCodeReviewOpen(true);
-                }
-                : undefined
-            }
             onTogglePin={!profileScript && plugin ? () => void togglePin(plugin.pluginId) : undefined}
             isPinned={isPinned}
           />
@@ -555,6 +561,15 @@ function AutomationDrawer({
             keyboardDismissMode="on-drag"
           >
             {activeTab === 'options' ? (
+              <>
+              <View style={styles.optionTools}>
+                {descriptor?.sections.length ? (
+                  <PresetBar pluginId={descriptor.info.pluginId} onBeforeChange={onFlush} />
+                ) : null}
+                {plugin && descriptor?.sections.length ? (
+                  <LlmPrompt collapsedLabel="Suggest settings with AI" placeholder="Describe the settings, e.g. only farm wheat and go slower" button="Suggest" writingLabel="Choosing values" onSubmit={describeSettings} />
+                ) : null}
+              </View>
               <PluginOptionsView
                 descriptor={descriptor}
                 loading={loading}
@@ -574,6 +589,7 @@ function AutomationDrawer({
                 allOptions={allOptions}
                 resolveOptionValue={resolveOptionValue}
               />
+              </>
             ) : (
               <>
                 <PluginDetailsView
@@ -595,16 +611,17 @@ function AutomationDrawer({
             {activeTab === 'details' && !profileScript ? (
               <View style={styles.detailActions}>
                 {plugin.language === 'js' || plugin.language === 'ts' ? (
-                  <PluginCodeReviewButton
-                    key={plugin.pluginId}
-                    plugin={plugin}
-                    open={codeReviewOpen}
-                    onOpenChange={setCodeReviewOpen}
-                    compact
+                  <Button
+                    title="Code"
+                    variant="secondary"
+                    small
+                    style={styles.detailAction}
+                    onPress={() => openEditor('/(app)/plugin/code/[pluginId]')}
+                    icon={<NativeIcon sf="chevron.left.forwardslash.chevron.right" material="code" size={18} color={colors.text} />}
                   />
                 ) : plugin.language === 'recording' ? (
                   <Button
-                    title="View steps"
+                    title="Steps"
                     variant="secondary"
                     small
                     style={styles.detailAction}
@@ -613,6 +630,16 @@ function AutomationDrawer({
                       router.push({ pathname: '/(app)/recording/[pluginId]', params: { pluginId: plugin.pluginId } });
                     }}
                     icon={<NativeIcon sf="list.bullet" material="format-list-bulleted" size={18} color={colors.text} />}
+                  />
+                ) : null}
+                {canUsePlugins ? (
+                  <Button
+                    title="Edit"
+                    variant="secondary"
+                    small
+                    style={styles.detailAction}
+                    onPress={() => openEditor('/(app)/plugin/settings/[pluginId]')}
+                    icon={<NativeIcon sf="slider.horizontal.3" material="tune" size={18} color={colors.text} />}
                   />
                 ) : null}
                 {canShare ? (
@@ -628,16 +655,6 @@ function AutomationDrawer({
                     icon={<NativeIcon sf="square.and.arrow.up" material="share" size={18} color={colors.text} />}
                   />
                 ) : null}
-                <Button
-                  title="Delete"
-                  variant="danger"
-                  small
-                  style={styles.detailAction}
-                  loading={deleting}
-                  disabled={deleting || !canUsePlugins}
-                  onPress={confirmDelete}
-                  icon={<NativeIcon sf="trash" material="delete" size={18} color={colors.danger} />}
-                />
               </View>
             ) : null}
             <Button
@@ -658,7 +675,28 @@ function AutomationDrawer({
                   color={running ? colors.danger : colors.primaryOn}
                 />
               }
-              onPress={running ? onStop : onRun}
+              onPress={running ? onStop : () => onRun()}
+            />
+            {running ? (
+              <Button
+                title="Run another instance"
+                variant="secondary"
+                full
+                disabled={loading || instanceCount >= MAX_SCRIPT_INSTANCES || !canUseScripts || !canUseAccounts}
+                onPress={() => (runChoices.length ? setPickingPreset(true) : onRun())}
+              />
+            ) : null}
+            <PickerModal
+              visible={pickingPreset}
+              title="Run another instance with"
+              options={runChoices}
+              value={undefined}
+              multiple={false}
+              onChange={(presetId) => {
+                setPickingPreset(false);
+                onRun(String(presetId));
+              }}
+              onClose={() => setPickingPreset(false)}
             />
           </View>
         </KeyboardAvoidingView>
@@ -709,6 +747,10 @@ const styles = StyleSheet.create({
   segmentLabelSelected: {
     color: colors.text,
     fontWeight: font.weight.bold,
+  },
+  optionTools: {
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
   },
   sheetContent: {
     paddingBottom: spacing.xxl,

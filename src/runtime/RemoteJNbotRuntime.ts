@@ -6,12 +6,14 @@ import {
   type Address,
 } from "../generated/client-contract/messaging/Address";
 import { Messenger } from "../generated/client-contract/messaging/Messenger";
+import { LLM_STREAM_EVENT, llmRequestOptions, type LlmStreamMessage } from "../generated/client-contract/llm";
 import type { ProfilePublication } from "../generated/client-contract/messaging/Protocol";
 import type {
   EndpointTransport,
   TransportFrame,
 } from "../generated/client-contract/messaging/Transport";
-import type { JNbotRuntime, ServerStatus } from "./JNbotRuntime";
+import type { JNbotRuntime, NewPluginInput, ServerStatus, ShareAction } from "./JNbotRuntime";
+import { importPortablePlugins, previewPluginImports, requestShareAction, savePluginCode, savePluginInfo } from "./backendActions";
 import {
   REMOTE_PROTOCOL_VERSION,
   type PairingCredentials,
@@ -30,9 +32,7 @@ import {
   type InstanceImportInput,
   type InstanceImportResult,
   type PortablePluginPackage,
-  type PluginImportPreview,
   type PluginImportDecision,
-  type PluginImportResult,
   type InstanceTransferChunk,
   type InstanceTransferRequestResult,
 } from "./types";
@@ -429,15 +429,23 @@ export class RemoteJNbotRuntime implements JNbotRuntime {
     event: string,
     data?: unknown,
   ): Promise<T> {
-    return this.requireMessenger().request("client:profile-action", BACKEND, {
-      profileId,
-      event,
-      data,
-    });
+    return this.requireMessenger().request(
+      "client:profile-action",
+      BACKEND,
+      { profileId, event, data },
+      llmRequestOptions(event),
+    );
   }
 
+  llmAction<T = unknown>(event: string, data?: unknown): Promise<T> {
+    return this.requireMessenger().request<T>("client:action", BACKEND, { event, data }, llmRequestOptions(event));
+  }
   invoke<T = unknown>(channel: string, data?: unknown): Promise<T> {
     return this.requireMessenger().request("client:invoke", BACKEND, { channel, data });
+  }
+  subscribeLlmStream(listener: (message: LlmStreamMessage) => void) {
+    if (!this.messenger || this.assignedAddress === null) return () => {};
+    return this.messenger.sub(LLM_STREAM_EVENT, this.assignedAddress, (data) => listener(data as LlmStreamMessage));
   }
 
   async getInstalledPlugins(): Promise<MacroInfo[]> {
@@ -454,8 +462,20 @@ export class RemoteJNbotRuntime implements JNbotRuntime {
       data: metadata,
     });
   }
-  async savePluginCode(_pluginId: string, _code: string): Promise<never> {
-    throw new Error("Desktop plugins can only be edited on the desktop.");
+  async createPlugin(input: NewPluginInput): Promise<MacroInfo> {
+    const { status, message, ...plugin } = await this.requireMessenger().request<MacroInfo & { status?: string; message?: string }>(
+      "client:action",
+      BACKEND,
+      { event: "CREATE_MACRO", data: input },
+    );
+    if (status !== "success") throw new Error(message ?? "Could not create the plugin.");
+    return plugin;
+  }
+  savePluginCode(pluginId: string, code: string): Promise<unknown> {
+    return savePluginCode(this.requireMessenger(), pluginId, code);
+  }
+  savePluginInfo(info: MacroInfo): Promise<unknown> {
+    return savePluginInfo(this.requireMessenger(), info);
   }
 
   async getPublicPlugins(): Promise<MacroInfo[]> {
@@ -474,21 +494,14 @@ export class RemoteJNbotRuntime implements JNbotRuntime {
     });
   }
 
-  async previewPluginImports(
-    _packages: (PortablePluginPackage | string)[],
-  ): Promise<PluginImportPreview[]> {
-    throw new Error("Plugin imports can only be reviewed on this phone.");
+  previewPluginImports(packages: (PortablePluginPackage | string)[]) {
+    return previewPluginImports(this.requireMessenger(), packages);
   }
-
-  async importPortablePlugins(
-    _packages: (PortablePluginPackage | string)[],
-    _decisions: PluginImportDecision[],
-  ): Promise<PluginImportResult> {
-    throw new Error("Plugins can only be installed on this phone.");
+  importPortablePlugins(packages: (PortablePluginPackage | string)[], decisions: PluginImportDecision[]) {
+    return importPortablePlugins(this.requireMessenger(), packages, decisions);
   }
-
-  async shareAction<T>(): Promise<T> {
-    throw new Error("Share links work with plugins and profiles on this phone.");
+  shareAction<T>(event: ShareAction, data: unknown): Promise<T> {
+    return requestShareAction<T>(this.requireMessenger(), event, data);
   }
 
   getPluginDescriptor(

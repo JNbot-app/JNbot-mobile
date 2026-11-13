@@ -33,7 +33,7 @@ test('Needle XCFramework supports CocoaPods and links the current engine on ever
         encoding: 'utf8',
         maxBuffer: 16 * 1024 * 1024,
       });
-      for (const symbol of ['jnbot_needle_register', 'np_load', 'np_representation_prepare', 'eg_encode']) {
+      for (const symbol of ['jnbot_needle_register', 'np_load', 'np_set_window', 'np_set_prefix']) {
         assert.match(symbols, new RegExp(`\\bT _${symbol}\\b`));
       }
     }

@@ -34,8 +34,8 @@ jest.mock("../../hooks/useAsyncAction", () => ({
     run: (action: () => Promise<void>) => action(),
   }),
 }));
-jest.mock("./useScheduleScripts", () => ({
-  useScheduleScripts: () => ({ scripts: mockScripts, loading: false }),
+jest.mock("../../hooks/useRunnableScripts", () => ({
+  useRunnableScripts: () => ({ scripts: mockScripts, loading: false }),
 }));
 jest.mock("../BottomSheet", () => ({
   BottomSheet: ({ children }: { children: React.ReactNode }) => <>{children}</>,
@@ -82,9 +82,8 @@ test("saves a custom repeat and partial overrides without changing script settin
   });
   await act(async () => {
     view.root
-      .findByProps({ accessibilityLabel: "Repeat interval" })
-      .props.onChangeText("3");
-    view.root.findByProps({ title: "Repeat unit" }).props.onChange("week");
+      .findByProps({ accessibilityLabel: "minutes" })
+      .props.onChangeText("2");
     view.root
       .findByType("MockOverrides")
       .props.onChange({ gamemode: "skyblock" });
@@ -97,7 +96,7 @@ test("saves a custom repeat and partial overrides without changing script settin
     value: [
       expect.objectContaining({
         kind: "schedule",
-        repeat: { every: 3, unit: "week" },
+        repeat: { every: 1442, unit: "minute" },
         options: { gamemode: "skyblock" },
       }),
     ],

@@ -20,7 +20,7 @@ export function ProfileAdvancedEditor({ section, value, onChange, plugins, versi
       <ProfileColorField value={value.color ?? '#E6BF4C'} onChange={(color) => onChange({ ...value, color })} />
     </View>;
     case 'connection': return <ProfileLabel label="Additional server addresses"><PickerField title="Additional server addresses" options={(value.ips ?? []).map((ip) => ({ label: ip, value: ip }))} value={value.ips ?? []} multiple freeSolo clearable placeholder="Add server addresses" onChange={(ips) => onChange({ ...value, ips: Array.isArray(ips) ? ips.map(String) : [] })} /></ProfileLabel>;
-    case 'gamemodes': return <ProfileGamemodesEditor value={value} onChange={onChange} />;
+    case 'gamemodes': return <ProfileGamemodesEditor value={value} onChange={onChange} plugins={plugins} />;
     case 'ranks': return <ProfileRanksEditor value={value} onChange={onChange} />;
     case 'scripts': case 'botExtension': return <ProfilePluginsEditor section={section} value={value} onChange={onChange} plugins={plugins} />;
     case 'defaults': return <ProfileDefaultsEditor value={value.appSettingsDefaults ?? {}} onChange={(appSettingsDefaults) => onChange({ ...value, appSettingsDefaults })} versions={versions} host={host} port={port} />;

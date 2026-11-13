@@ -187,6 +187,9 @@ export function ActiveScriptCard({
               bg={colors.successSoft}
               icon={<StatusDot color={colors.success} size={6} pulse />}
             />
+            {script.presetName ? (
+              <Badge label={script.presetName} color={colors.textMuted} bg={colors.surface} />
+            ) : null}
             {typeof botCount === 'number' && botCount > 0 ? (
               <Badge label={`${botCount} bot${botCount === 1 ? '' : 's'}`} />
             ) : null}

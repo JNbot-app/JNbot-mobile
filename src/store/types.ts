@@ -33,6 +33,8 @@ export type ActiveScript = {
   name: string;
   scriptId: string;
   instanceId: number;
+  /** Name of the preset this instance runs; unset for the Default preset. */
+  presetName?: string;
   controls?: number;
   origin?: 'worker' | 'minecraft';
   progress?: { current: number; total: number; eta?: number };
@@ -111,11 +113,16 @@ export interface AltTag {
 
 export type { ChainNext, ChainOptions, ChainStep } from '../generated/client-contract/chains';
 import type { ChainOptions, ChainStep } from '../generated/client-contract/chains';
+import type { OptionSection } from '../features/plugins/optionSchema';
 
 export type Chain = {
   id: string;
   chains: ChainStep[];
   name?: string;
+  /** JavaScript run for every account before the steps. */
+  setup?: string;
+  /** The chain's own options, defined on the desktop; values live with its settings. */
+  config?: OptionSection[];
   /** Legacy nested settings are migrated to the flat scripts[id] slot on open. */
   options?: Partial<ChainOptions> & {
     startWith?: string;
