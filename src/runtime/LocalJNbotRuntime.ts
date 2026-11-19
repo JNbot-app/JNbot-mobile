@@ -4,14 +4,16 @@ import {
   type Address,
 } from "../generated/client-contract/messaging/Address";
 import { Messenger } from "../generated/client-contract/messaging/Messenger";
+import { LLM_STREAM_EVENT, llmRequestOptions, type LlmStreamMessage } from "../generated/client-contract/llm";
 import type { ProfilePublication } from "../generated/client-contract/messaging/Protocol";
 import type {
   EndpointTransport,
   TransportFrame,
 } from "../generated/client-contract/messaging/Transport";
-import { PUBLISHER_NAME_REQUIRED, type JNbotRuntime, type RuntimeUnsubscribe, type ServerStatus, type ShareAction } from "./JNbotRuntime";
+import { type JNbotRuntime, type NewPluginInput, type RuntimeUnsubscribe, type ServerStatus, type ShareAction } from "./JNbotRuntime";
 import * as Sentry from "@sentry/react-native";
 import { EmbeddedNodeBridge } from "./EmbeddedNodeBridge";
+import { importPortablePlugins, previewPluginImports, requestShareAction, savePluginCode, savePluginInfo } from "./backendActions";
 import type {
   CreateProfileInput,
   CreateProfileResult,
@@ -30,9 +32,7 @@ import type {
   InstanceTransferChunk,
   InstanceTransferManifest,
   PortablePluginPackage,
-  PluginImportPreview,
   PluginImportDecision,
-  PluginImportResult,
 } from "./types";
 import type { PluginMetadata } from "../features/plugins/folders";
 
@@ -406,6 +406,13 @@ export class LocalJNbotRuntime implements JNbotRuntime {
       { timeoutMs: 10_000 },
     );
   }
+  subscribeLlmStream(listener: (message: LlmStreamMessage) => void) {
+    if (!this.messenger || this.address === null) return () => {};
+    return this.messenger.sub(LLM_STREAM_EVENT, this.address, (data) => listener(data as LlmStreamMessage));
+  }
+  llmAction<T = unknown>(event: string, data?: unknown): Promise<T> {
+    return this.requireMessenger().request<T>("client:action", BACKEND, { event, data }, llmRequestOptions(event));
+  }
   invoke<T = unknown>(channel: string, data?: unknown) {
     return this.requireMessenger().request<T>("client:invoke", BACKEND, { channel, data });
   }
@@ -414,6 +421,7 @@ export class LocalJNbotRuntime implements JNbotRuntime {
       "client:profile-action",
       BACKEND,
       { profileId, event, data },
+      llmRequestOptions(event),
     );
   }
   async getInstalledPlugins() {
@@ -430,11 +438,20 @@ export class LocalJNbotRuntime implements JNbotRuntime {
       data: metadata,
     });
   }
+  async createPlugin(input: NewPluginInput): Promise<MacroInfo> {
+    const { status, message, ...plugin } = await this.requireMessenger().request<MacroInfo & { status?: string; message?: string }>(
+      "client:action",
+      BACKEND,
+      { event: "CREATE_MACRO", data: input },
+    );
+    if (status !== "success") throw new Error(message ?? "Could not create the plugin.");
+    return plugin;
+  }
   savePluginCode(pluginId: string, code: string): Promise<unknown> {
-    return this.requireMessenger().request("client:action", BACKEND, {
-      event: "SAVE_MACRO",
-      data: { pluginId, code: { code } },
-    });
+    return savePluginCode(this.requireMessenger(), pluginId, code);
+  }
+  savePluginInfo(info: MacroInfo): Promise<unknown> {
+    return savePluginInfo(this.requireMessenger(), info);
   }
   async getPublicPlugins() {
     const result = await this.requireMessenger().request<any>(
@@ -450,33 +467,14 @@ export class LocalJNbotRuntime implements JNbotRuntime {
       data: { pluginId },
     });
   }
-  async previewPluginImports(
-    packages: (PortablePluginPackage | string)[],
-  ): Promise<PluginImportPreview[]> {
-    return this.requireMessenger().request("client:action", BACKEND, {
-      event: "PREVIEW_PORTABLE_PLUGINS",
-      data: { packages },
-    });
+  previewPluginImports(packages: (PortablePluginPackage | string)[]) {
+    return previewPluginImports(this.requireMessenger(), packages);
   }
-  async importPortablePlugins(
-    packages: (PortablePluginPackage | string)[],
-    decisions: PluginImportDecision[],
-  ): Promise<PluginImportResult> {
-    return this.requireMessenger().request("client:action", BACKEND, {
-      event: "IMPORT_PORTABLE_PLUGINS",
-      data: { packages, decisions },
-    });
+  importPortablePlugins(packages: (PortablePluginPackage | string)[], decisions: PluginImportDecision[]) {
+    return importPortablePlugins(this.requireMessenger(), packages, decisions);
   }
-  async shareAction<T>(event: ShareAction, data: unknown): Promise<T> {
-    const result = await this.requireMessenger().request<
-      { status?: string; data?: T; message?: string; identity?: { fingerprint?: string } }
-    >("client:action", BACKEND, { event, data });
-    if (result?.status === "publisher-name-required") {
-      throw Object.assign(new Error(PUBLISHER_NAME_REQUIRED), { fingerprint: result.identity?.fingerprint });
-    }
-    if (result?.status === "error") throw new Error(result.message || "Share link request failed");
-    // SHARE_* actions wrap their result in `data`; state and identity reads do not.
-    return (result?.status === "success" && "data" in result ? result.data : result) as T;
+  shareAction<T>(event: ShareAction, data: unknown): Promise<T> {
+    return requestShareAction<T>(this.requireMessenger(), event, data);
   }
   getPluginDescriptor(
     profileId: number,

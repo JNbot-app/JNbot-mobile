@@ -2,8 +2,9 @@ import type { RemoteCapability } from "../generated/client-contract/clientPermis
 import { AppState, type AppStateStatus, type NativeEventSubscription } from "react-native";
 import type { ActiveBot, AltWithData, MacroInfo, ScriptActionInfo } from "../store/types";
 import { chainPluginId } from "../generated/client-contract/chains";
+import type { LlmGenerateInput, LlmStreamMessage } from "../generated/client-contract/llm";
 import { actions, get, selectProfileReady } from "../store/store";
-import type { JNbotRuntime } from "../runtime/JNbotRuntime";
+import type { JNbotRuntime, NewPluginInput } from "../runtime/JNbotRuntime";
 import type {
   CreateProfileInput,
   AppSettingsPatch,
@@ -72,6 +73,21 @@ export class JNbotClient {
     AppState.currentState !== "background" && AppState.currentState !== "inactive";
 
   constructor(readonly runtime: JNbotRuntime) { }
+
+  /** Optional AI features, served by the desktop's AI provider. */
+  llm<T = unknown>(event: "LLM_STATUS" | "LLM_EXPLAIN_ERROR" | "LLM_CANCEL" | "LLM_SET_CONFIG" | "LLM_TEST" | "LLM_MODELS" | "LLM_WRITE_PLUGIN" | "LLM_ASK_SHARE", data?: unknown): Promise<T> {
+    return this.runtime.llmAction<T>(event, data);
+  }
+
+  /** Live progress of AI requests made with a `streamId`. */
+  onLlmStream(listener: (message: LlmStreamMessage) => void) {
+    return this.runtime.subscribeLlmStream(listener);
+  }
+
+  /** "Describe it" for this client's own profile. */
+  generate<T = unknown>(input: LlmGenerateInput): Promise<T> {
+    return this.profileAction<T>("LLM_GENERATE", input);
+  }
 
   private ensureAppStateListener() {
     if (this.appStateSubscription) return;
@@ -228,6 +244,11 @@ export class JNbotClient {
     return this.profileAction("STOP_ALL", chainPluginId(chainId));
   }
 
+  /** Skip the join delay for a queued bot. */
+  joinBotNow(botId: number) {
+    return this.profileAction<boolean>("JOIN_BOT_NOW", { botId });
+  }
+
   restartScript(instanceId?: number) {
     return this.profileAction("RESTART_ALL", instanceId);
   }
@@ -293,6 +314,12 @@ export class JNbotClient {
     return saved;
   }
 
+  async createPlugin(input: NewPluginInput) {
+    const plugin = await this.runtime.createPlugin(input);
+    actions.setMacros(await this.runtime.getInstalledPlugins());
+    return plugin;
+  }
+
   async getPluginCode(pluginId: string) {
     const { bundle, revision } = await this.runtime.exportPortablePlugin(pluginId);
     if (bundle.info.language !== "js" && bundle.info.language !== "ts")
@@ -316,6 +343,12 @@ export class JNbotClient {
     const result = await this.runtime.savePluginCode(pluginId, code);
     if (pluginSource(result) !== code)
       throw new Error("The runtime did not confirm the save. Your edits are still here.");
+  }
+
+  /** Like the desktop's `savePlugin`: the backend does not broadcast info saves, so update the list here. */
+  async savePluginInfo(info: MacroInfo) {
+    await this.runtime.savePluginInfo(info);
+    actions.setMacros(get().macros.list.map((item) => (item.pluginId === info.pluginId ? info : item)));
   }
 
   async deletePlugin(plugin: MacroInfo) {

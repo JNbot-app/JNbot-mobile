@@ -38,7 +38,7 @@ for (const abi of ['armeabi-v7a', 'arm64-v8a', 'x86_64']) {
       assert.match(symbols, /\bT JNI_OnLoad\b/);
       if (abi === 'arm64-v8a') {
         assert.match(symbols, /\bT np_load\b/, 'The real decoder must be linked');
-        assert.match(symbols, /\bT eg_encode\b/, 'The real encoder must be linked');
+        assert.match(symbols, /\bT np_set_prefix\b/, 'The tool-prefix cache must be linked');
       } else {
         assert.doesNotMatch(symbols, /\bT np_load\b/, 'Unsupported architectures use the fallback binding');
       }

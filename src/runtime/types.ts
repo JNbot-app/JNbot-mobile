@@ -1,3 +1,4 @@
+import type { ScriptKind } from "../generated/client-contract/scriptKinds";
 import type { RemoteAccessCapabilities } from "../generated/client-contract/clientPermissions";
 import type { Address } from "../generated/client-contract/messaging/Address";
 import type { ProfilePublication } from "../generated/client-contract/messaging/Protocol";
@@ -176,6 +177,8 @@ export type SerializableOption = {
   clearable?: boolean;
   freeSolo?: boolean;
   multiple?: boolean;
+  /** `scriptSelect`: kinds of script to offer; omit for all. */
+  kinds?: ScriptKind[];
   labelChecked?: string;
   labelUnchecked?: string;
   fields?: Array<{

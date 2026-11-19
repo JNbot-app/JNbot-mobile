@@ -27,6 +27,7 @@ import type { Chain, ScriptActionInfo } from "../../../src/store/types";
 import { colors, spacing } from "../../../src/theme/theme";
 import { Screen } from "../../../src/components/Screen";
 import { useOpenShareLink, useShareActions } from "../../../src/features/shares";
+import { LlmPrompt } from "../../../src/components/LlmPrompt";
 
 export default function ChainEditor() {
   const { chainId } = useLocalSearchParams<{ chainId: string }>();
@@ -82,6 +83,13 @@ export default function ChainEditor() {
     if (!chain) return;
     void save(chainSteps(chain, chain.chains.map((step, stepIndex) => stepIndex === index ? { ...step, ...patch } : step)));
   }, [chain, save]);
+
+  const generate = useCallback(async (description: string) => {
+    if (!client || !chain || !options) return;
+    const draft = await client.generate<{ name?: string; steps?: Chain["chains"] }>({ kind: "chain", description });
+    await save(chainSteps(chain, draft.steps ?? []));
+    if (draft.name) await client.updateSettings(saveChainOptionsPatch(chain.id, { ...options, name: draft.name }));
+  }, [chain, client, options, save]);
 
   const removeStep = useCallback((index: number) => {
     if (chain) void save(removeChainStep(chain, index));
@@ -170,16 +178,22 @@ export default function ChainEditor() {
           <NativeIcon sf="chevron.right" material="chevron-right" size={18} color={colors.textFaint} />
         </PressableCard>
         <ShareUpdateRow kind="chain" localRef={chainId} />
+        <PressableCard accessibilityLabel="Setup code" onPress={() => router.push({ pathname: '/(app)/chains/setup/[chainId]', params: { chainId } })} style={styles.settings}>
+          <NativeIcon sf="chevron.left.forwardslash.chevron.right" material="code" size={20} color={colors.textMuted} />
+          <Txt variant="heading" style={{ flex: 1 }}>Setup code</Txt>
+          <Txt variant="muted">{chain.setup?.trim() ? "In use" : "Optional"}</Txt>
+          <NativeIcon sf="chevron.right" material="chevron-right" size={18} color={colors.textFaint} />
+        </PressableCard>
         {options.description ? <Txt variant="muted">{options.description}</Txt> : null}
         <View style={styles.intro}><Txt variant="heading">Steps</Txt><Txt variant="muted">Each selected account runs these from top to bottom. Long-press a step to reorder.</Txt></View>
         {chain.chains.length ? <ChainStepList count={chain.chains.length} enabled={canUseScripts} onMove={(from, to) => void save(moveChainStep(chain, from, to))}>{chain.chains.map((step, index) => {
           const action = actions?.find((item) => item.pluginId === step.scriptId);
           return <ChainStepRow key={`${step.id}:${step.scriptId}:${index}`} step={step} steps={chain.chains} index={index} action={action} unavailable={Boolean(actions && step.scriptId && !action)} editable={canUseScripts} onSelectAction={() => setPickerIndex(index)} onEdit={() => router.push({ pathname: '/(app)/chains/step/[chainId]', params: { chainId, stepId: String(step.id) } })} onRemove={() => removeStep(index)} />;
-        })}</ChainStepList> : <EmptyState icon={<NativeIcon sf="bolt" material="bolt" size={38} color={colors.textFaint} />} title="Add your first action" subtitle="Choose an action, then add more to build a complete routine." />}
+        })}</ChainStepList> : <><LlmPrompt placeholder="Describe the steps, e.g. claim the daily kit, then sell everything" onSubmit={generate} /><EmptyState icon={<NativeIcon sf="bolt" material="bolt" size={38} color={colors.textFaint} />} title="Add your first action" subtitle="Choose an action, then add more to build a complete routine." /></>}
         <Button title="Add step" variant="secondary" full disabled={!canUseScripts} icon={<NativeIcon sf="plus" material="add" size={18} color={colors.text} />} onPress={addStep} />
       </ScrollView>
       <View style={[styles.footer, { paddingBottom: Math.max(spacing.lg, insets.bottom + spacing.sm) }]}>
-        {active ? <Button title="Stop chain" variant="danger" full icon={<NativeIcon sf="stop.fill" material="stop" size={17} color={colors.danger} />} onPress={() => void stop()} /> : <Button title={running ? "Starting…" : "Run chain"} loading={running} disabled={!runnable} full icon={<NativeIcon sf="play.fill" material="play-arrow" size={18} color={colors.primaryOn} />} onPress={() => void run()} />}
+        {active ? <View style={{ gap: spacing.sm }}><Button title="Stop chain" variant="danger" full icon={<NativeIcon sf="stop.fill" material="stop" size={17} color={colors.danger} />} onPress={() => void stop()} /><Button title="Run another instance" variant="secondary" full loading={running} disabled={!runnable} onPress={() => void run()} /></View> : <Button title={running ? "Starting…" : "Run chain"} loading={running} disabled={!runnable} full icon={<NativeIcon sf="play.fill" material="play-arrow" size={18} color={colors.primaryOn} />} onPress={() => void run()} />}
         {!canUseScripts ? <Txt variant="faint" style={styles.permission}>Script access is required to edit chains.</Txt> : !canUseAccounts ? <Txt variant="faint" style={styles.permission}>Account access is required to run chains.</Txt> : actions === null ? <Txt variant="faint" style={styles.permission}>Loading available actions…</Txt> : null}
       </View>
     </View>

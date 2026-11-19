@@ -1,21 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import { FlatList, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { highlightLines } from '../../features/plugins/code/highlight';
-import { colors, font, radii, spacing } from '../../theme/theme';
+import { colors, radii, spacing } from '../../theme/theme';
+import { codeTextStyle, tokenColor } from './codeTheme';
 import { Txt } from '../ui';
 
-const tokenColors: Record<string, string> = {
-  comment: colors.textFaint,
-  keyword: '#C4A7FF',
-  string: '#A8D8A0',
-  'template-string': '#A8D8A0',
-  number: '#FFD2A0',
-  boolean: '#FFD2A0',
-  function: colors.info,
-  'class-name': colors.info,
-  regex: colors.warning,
-};
-
+/** Read-only view for files too large to edit on the phone. */
 export function PluginCodeLines({ code, language }: { code: string; language: 'js' | 'ts' }) {
   const [query, setQuery] = useState('');
   const lines = useMemo(() => highlightLines(code, language), [code, language]);
@@ -53,7 +43,7 @@ export function PluginCodeLines({ code, language }: { code: string; language: 'j
               <Text accessible={false} style={[styles.code, styles.number]}>{item.number}</Text>
               <Text selectable numberOfLines={1} style={[styles.code, styles.source]}>
                 {item.spans.length ? item.spans.map((span, index) => (
-                  <Text key={index} style={{ color: tokenColors[span.type] ?? colors.text }}>{span.text}</Text>
+                  <Text key={index} style={{ color: tokenColor(span.type) }}>{span.text}</Text>
                 )) : ' '}
               </Text>
             </View>
@@ -64,16 +54,9 @@ export function PluginCodeLines({ code, language }: { code: string; language: 'j
   );
 }
 
-export const codeTextStyle = {
-  fontFamily: process.env.EXPO_OS === 'ios' ? 'Menlo' : 'monospace',
-  fontSize: font.size.caption,
-  lineHeight: 21,
-  color: colors.text,
-};
 const styles = StyleSheet.create({
   container: { flex: 1 },
   search: { marginHorizontal: spacing.lg, padding: spacing.md, minHeight: 44, backgroundColor: colors.surface, color: colors.text, borderRadius: radii.sm },
-  count: { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm },
   list: { paddingBottom: spacing.xl },
   lines: { flex: 1 },
   row: { flexDirection: 'row', paddingRight: spacing.lg },

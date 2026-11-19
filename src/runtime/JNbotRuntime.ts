@@ -1,3 +1,4 @@
+import type { LlmStreamMessage } from "../generated/client-contract/llm";
 import type { ActiveBot, AltWithData, MacroInfo } from "../store/types";
 import type { PluginMetadata } from "../features/plugins/folders";
 import type { Address } from "../generated/client-contract/messaging/Address";
@@ -25,6 +26,13 @@ import type {
 } from "./types";
 
 export type RuntimeUnsubscribe = () => void;
+
+export type NewPluginInput = {
+  name: string;
+  description: string;
+  language: "js" | "ts";
+  scriptType: "script" | "action";
+};
 
 export type ServerStatus = { version?: string; online?: number; max?: number; favicon?: string };
 
@@ -77,9 +85,15 @@ export interface JNbotRuntime {
   ): Promise<T>;
   /** Calls a backend `ipcMain` handle (the desktop renderer's `ipcRenderer.invoke`). */
   invoke<T = unknown>(channel: string, data?: unknown): Promise<T>;
+  /** An optional-AI request (`LLM_*`) (served by the phone's own backend or the connected desktop). */
+  llmAction<T = unknown>(event: string, data?: unknown): Promise<T>;
+  /** Live progress of AI requests this client made with a `streamId`. */
+  subscribeLlmStream(listener: (message: LlmStreamMessage) => void): RuntimeUnsubscribe;
   getInstalledPlugins(): Promise<MacroInfo[]>;
   updatePluginMetadata(metadata: PluginMetadata): Promise<PluginMetadata>;
+  createPlugin(input: NewPluginInput): Promise<MacroInfo>;
   savePluginCode(pluginId: string, code: string): Promise<unknown>;
+  savePluginInfo(info: MacroInfo): Promise<unknown>;
   getPublicPlugins(): Promise<MacroInfo[]>;
   exportPortablePlugin(pluginId: string): Promise<PortablePluginPackage>;
   previewPluginImports(
@@ -89,7 +103,7 @@ export interface JNbotRuntime {
     packages: (PortablePluginPackage | string)[],
     decisions: PluginImportDecision[],
   ): Promise<PluginImportResult>;
-  /** Share links (create, manage, install) run on this phone's own backend. */
+  /** Share links; a paired desktop allows browsing and installing, not creating or managing. */
   shareAction<T>(event: ShareAction, data: unknown): Promise<T>;
   getPluginDescriptor(
     profileId: number,

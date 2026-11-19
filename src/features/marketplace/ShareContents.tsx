@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { NativeIcon } from '../../components/NativeIcon';
 import { Badge, Card, Txt } from '../../components/ui';
 import {
@@ -10,6 +10,7 @@ import {
   type ShareOverview,
 } from '../../generated/client-contract/share';
 import { colors, font, spacing } from '../../theme/theme';
+import { codeTextStyle } from '../../components/pluginEditor/codeTheme';
 import { useServerName } from '../shares';
 
 type Fact = [string, React.ReactNode] | false | undefined;
@@ -85,6 +86,23 @@ function ChainSteps({ details }: { details: ShareDetailSection[] }) {
   );
 }
 
+/** A chain's setup code, readable before installing. */
+function SetupCode({ code }: { code: string }) {
+  return (
+    <View style={{ gap: spacing.sm }}>
+      <Txt variant="label">Setup code</Txt>
+      <Txt variant="muted">Runs for every account before the steps and can change how they run.</Txt>
+      <Card style={styles.code}>
+        <ScrollView nestedScrollEnabled style={{ maxHeight: 320 }}>
+          <ScrollView horizontal>
+            <Txt selectable style={codeTextStyle}>{code}</Txt>
+          </ScrollView>
+        </ScrollView>
+      </Card>
+    </View>
+  );
+}
+
 const TRIGGER_FIXED_ROWS = new Set(['When', 'Cooldown', 'Runs on']);
 
 function TriggerRule({ section }: { section: ShareDetailSection }) {
@@ -149,14 +167,17 @@ export function ShareContents({ overview }: { overview: ShareOverview }) {
       );
       break;
     }
-    case 'chain':
+    case 'chain': {
+      const setup = details.find((section) => section.code !== undefined)?.code;
       body = (
         <>
           <ChainSteps details={details} />
+          {setup !== undefined ? <SetupCode code={setup} /> : null}
           <Facts facts={[!!detailValue(details, 'Gamemode') && ['Gamemode', detailValue(details, 'Gamemode')], ['Works on', worksOn], requires]} />
         </>
       );
       break;
+    }
     case 'trigger':
       body = (
         <>
@@ -179,6 +200,7 @@ export function ShareContents({ overview }: { overview: ShareOverview }) {
 
 const styles = StyleSheet.create({
   strip: { flexDirection: 'row', paddingVertical: spacing.md, paddingHorizontal: 0 },
+  code: { padding: spacing.md },
   cell: { flex: 1, alignItems: 'center', gap: 4, paddingHorizontal: spacing.sm },
   cellDivider: { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: colors.border },
   cellLabel: { textTransform: 'uppercase', letterSpacing: 0.6, fontWeight: font.weight.semibold },

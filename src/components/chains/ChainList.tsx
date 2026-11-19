@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
   cardFirst: { borderTopWidth: StyleSheet.hairlineWidth, borderTopLeftRadius: radii.lg, borderTopRightRadius: radii.lg, borderCurve: "continuous" },
   cardLast: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomLeftRadius: radii.lg, borderBottomRightRadius: radii.lg, borderCurve: "continuous" },
   rowPressed: { backgroundColor: colors.surfaceHover },
-  icon: { width: 42, height: 42, borderRadius: radii.md, backgroundColor: colors.primarySoft, alignItems: "center" },
+  icon: { width: 42, height: 42, borderRadius: radii.md, backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center" },
   copy: { flex: 1, minWidth: 0, gap: 3 },
   running: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 7, paddingVertical: 4, borderRadius: radii.pill, backgroundColor: colors.successSoft },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.success },

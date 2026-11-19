@@ -30,6 +30,7 @@ import {
   type ShareState,
 } from "../../../src/generated/client-contract/share";
 import { useFeedback } from "../../../src/components/AppFeedback";
+import { ShareAskAi } from "../../../src/components/share/ShareAskAi";
 
 const keyOf = pluginKey;
 const INSTALL_LABELS = { none: "Install", update: "Update", installed: "Open" } as const;
@@ -183,7 +184,7 @@ export default function ShareScreen() {
   const load = async () => {
     try {
       const result = await shareAction<SharePreview>("SHARE_PREVIEW", { link: id, profileKey: profileKey ?? undefined });
-      // Previews run on the phone runtime, which knows what is installed.
+      // The runtime that previews also knows what is installed.
       useShares.setState(await shareAction<ShareState>("SHARE_STATE", undefined));
       setPreview(result);
       return result;
@@ -276,6 +277,7 @@ export default function ShareScreen() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
         <Header overview={overview} installState={installState} reviewed={reviewed} />
         <ShareContents overview={overview} />
+        <ShareAskAi overview={overview} load={async () => preview ?? load()} />
 
         {showCheck && preview ? (
           <View style={{ gap: spacing.sm }}>

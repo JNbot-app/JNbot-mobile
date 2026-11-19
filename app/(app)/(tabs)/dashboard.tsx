@@ -27,6 +27,7 @@ import { GettingStartedCard } from '../../../src/components/dashboard/GettingSta
 import { ActivityCard } from '../../../src/components/dashboard/ActivityCard';
 import { SwipeAction } from '../../../src/components/SwipeAction';
 import { useCommands } from '../../../src/hooks/useCommands';
+import { isBotQueued } from '../../../src/features/joinQueue';
 import { useGettingStarted } from '../../../src/features/onboarding/gettingStarted';
 import type { ActiveBot, ActiveScript } from '../../../src/store/types';
 
@@ -124,7 +125,17 @@ export default function Dashboard() {
                         <Txt variant="muted" numberOfLines={1}>{bot.SCRIPT_NAME || bot.script || 'Idle'}{bot.host ? ` · ${bot.host}` : ''}</Txt>
                       </View>
                       <BotStatusBadge bot={bot} />
-                      <NativeIcon sf="chevron.right" material="chevron-right" size={18} color={colors.textFaint} />
+                      {commands && isBotQueued(bot.status) ? (
+                        <Pressable
+                          accessibilityRole="button"
+                          hitSlop={8}
+                          onPress={() => void commands.joinBotNow(bot)}
+                        >
+                          <Txt>Join now</Txt>
+                        </Pressable>
+                      ) : (
+                        <NativeIcon sf="chevron.right" material="chevron-right" size={18} color={colors.textFaint} />
+                      )}
                     </Pressable>
                   </SwipeAction>
                 ))}

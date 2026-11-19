@@ -10,6 +10,7 @@ import {
 } from "../../features/triggers";
 import type { JNbotClient } from "../../client/JNbotClient";
 import { Choice, PickerField } from "../PickerField";
+import PresetPicker from "../automation/PresetPicker";
 import { IconButton, Txt } from "../ui";
 import { colors, radii, spacing } from "../../theme/theme";
 import { triggerInputStyle } from "./triggerInputStyle";
@@ -59,13 +60,20 @@ function ActionInput({ action, scriptActions, onChange }: {
       return input(action.directory, "Directory on the JNbot host", (directory) => onChange({ ...action, directory }));
     case "scriptAction":
       return (
-        <PickerField
-          title="Script action"
-          options={scriptActions}
-          value={action.id}
-          placeholder="Choose a script action"
-          onChange={(id) => onChange({ ...action, id: String(id ?? "") })}
-        />
+        <View style={{ gap: spacing.sm }}>
+          <PickerField
+            title="Script action"
+            options={scriptActions}
+            value={action.id}
+            placeholder="Choose a script action"
+            onChange={(id) => onChange({ type: action.type, id: String(id ?? "") })}
+          />
+          <PresetPicker
+            pluginId={action.id}
+            value={action.preset}
+            onChange={(preset) => onChange({ ...action, preset })}
+          />
+        </View>
       );
     default:
       return null;

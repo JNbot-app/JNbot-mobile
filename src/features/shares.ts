@@ -29,15 +29,15 @@ export function useOpenShareLink() {
 /**
  * Update action for an item installed from a share: opens the update when one is
  * known, otherwise checks the server first. Undefined when it was not installed
- * from a share, or when shares cannot be managed from this connection.
+ * from a share.
  */
 export function useShareUpdateAction(kind: ShareKind, localRef: string) {
   const router = useRouter();
-  const { shareAction, mode } = useConnection();
+  const { shareAction } = useConnection();
   const { showMessage } = useFeedback();
   const share = useShares((state) => findShare(state.installed, kind, (item) => item.localRef === localRef));
   const appVersion = useShares((state) => state.appVersion);
-  if (!share || mode !== "local") return undefined;
+  if (!share) return undefined;
 
   const available = shareUpdateAvailable(share, appVersion);
   // Resolves to a status message, or undefined once the update screen is opened. `silent` skips
@@ -72,28 +72,29 @@ const MUTATIONS = new Set<ShareAction>([
 ]);
 
 /**
- * Share actions on the phone's own backend. Links can only be managed while
- * the phone runs its own profiles (`local`), as on desktop they are signed
- * with this device's publisher key.
+ * Share actions on the active runtime. Browsing and installing work on a paired
+ * desktop too; links can only be managed while the phone runs its own profiles
+ * (`local`), as they are signed with this device's publisher key.
  */
 export function useShareActions() {
   const { shareAction, mode } = useConnection();
   const local = mode === "local";
 
   const refresh = useCallback(async () => {
-    if (!local) return;
     useShares.setState(await shareAction<ShareState>("SHARE_STATE", undefined));
-  }, [local, shareAction]);
+  }, [shareAction]);
 
-  /** Loads the marketplace (switches to the phone runtime, where installs happen). */
+  /** Loads the marketplace and the installs it is compared against. */
   const loadMarket = useCallback(
     async (force = false) => {
       if (useMarket.getState().loading) return;
       useMarket.setState({ loading: true });
       try {
-        const entries = await shareAction<MarketEntry[]>("SHARE_MARKET", force);
-        // The catalog runs on the phone runtime, so its installs can be read now too.
-        useShares.setState(await shareAction<ShareState>("SHARE_STATE", undefined));
+        const [entries, state] = await Promise.all([
+          shareAction<MarketEntry[]>("SHARE_MARKET", force),
+          shareAction<ShareState>("SHARE_STATE", undefined),
+        ]);
+        useShares.setState(state);
         useMarket.setState({ entries, loading: false, error: null });
       } catch (cause) {
         useMarket.setState({
@@ -123,17 +124,15 @@ export const findShare = <T extends { kind: ShareKind }>(
   match: (share: T) => boolean,
 ) => Object.values(shares).find((share) => share.kind === kind && match(share));
 
-/**
- * Profile shares not installed yet, official (built-in) servers first. Loads
- * the catalog only on the phone runtime, where profiles are installed.
- */
+/** Profile shares not installed yet, official (built-in) servers first. */
 export function useMarketProfiles() {
-  const { local, loadMarket } = useShareActions();
+  const connected = useConnection().status === "connected";
+  const { loadMarket } = useShareActions();
   const { entries, loading, error } = useMarket();
   const installed = useShares((state) => state.installed);
   useEffect(() => {
-    if (local) void loadMarket();
-  }, [local, loadMarket]);
+    if (connected) void loadMarket();
+  }, [connected, loadMarket]);
   const profiles = (entries ?? [])
     .filter((entry) => entry.kind === "profile" && !installed[entry.id])
     .sort(

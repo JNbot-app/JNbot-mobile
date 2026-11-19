@@ -10,7 +10,8 @@ import { useAutomationDrawer } from '../automation/AutomationDrawer';
 import { useFeedback } from '../AppFeedback';
 import { usePluginPin } from '../../hooks/usePluginPin';
 import { useStore } from '../../store/store';
-import type { MacroInfo } from '../../store/types';
+import type { ActiveScript, MacroInfo } from '../../store/types';
+import { pluginPresets, selectedPresetId } from '../../generated/client-contract/pluginPresets';
 import type { DashboardScriptItem } from './DashboardScripts';
 import { colors, font, radii, spacing, palette } from '../../theme/theme';
 
@@ -20,6 +21,17 @@ interface DashboardScriptCardProps {
 
 function isPluginDisallowed(profile?: { disallowedPlugins?: string[] }, pluginId?: string): boolean {
   return Boolean(pluginId && profile?.disallowedPlugins?.includes(pluginId));
+}
+
+/** Preset(s) the plugin runs or will run; only for plugins that use presets. */
+function presetLabel(stored: Record<string, any> | undefined, instances: ActiveScript[]) {
+  const presets = pluginPresets(stored);
+  if (instances.length) {
+    if (!instances.some((s) => s.presetName)) return undefined;
+    return [...new Set(instances.map((s) => s.presetName ?? 'Default'))].join(', ');
+  }
+  if (!Object.keys(presets).length) return undefined;
+  return presets[selectedPresetId(stored)]?.name ?? 'Default';
 }
 
 export const DashboardScriptCard: React.FC<DashboardScriptCardProps> = React.memo(({ script }) => {
@@ -36,10 +48,14 @@ export const DashboardScriptCard: React.FC<DashboardScriptCardProps> = React.mem
   const [starting, setStarting] = useState(false);
   const [imageError, setImageError] = useState(false);
 
-  const runningInstance = Object.values(activeScripts).find(
+  const stored = useStore((state) => (script.pluginId ? state.settings.scripts?.[script.pluginId] : undefined));
+
+  const instances = Object.values(activeScripts).filter(
     (s) => s.scriptId === script.id || s.scriptId === script.pluginId || s.name === script.name,
   );
+  const runningInstance = instances[0];
   const isRunning = Boolean(runningInstance);
+  const preset = presetLabel(stored, instances);
 
   const isBlocked = isPluginDisallowed(
     activeProfileKey ? jndata?.data?.[activeProfileKey] : undefined,
@@ -188,6 +204,11 @@ export const DashboardScriptCard: React.FC<DashboardScriptCardProps> = React.mem
           <Txt variant="none" numberOfLines={1} style={[styles.title, { color: palette.white }]}>
             {script.name}
           </Txt>
+          {preset ? (
+            <Txt variant="none" numberOfLines={1} style={[styles.title, styles.preset]}>
+              {preset}
+            </Txt>
+          ) : null}
         </View>
 
         <Pressable
@@ -283,6 +304,11 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 0, 0, 0.9)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
+  },
+  preset: {
+    fontSize: 11,
+    fontWeight: font.weight.medium,
+    opacity: 0.8,
   },
   actionBtn: {
     width: 28,

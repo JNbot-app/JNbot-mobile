@@ -22,7 +22,8 @@ import type { Cooldown, MacroInfo } from "../../../src/store/types";
 import { colors, radii, spacing } from "../../../src/theme/theme";
 import { BottomSheet } from '../../../src/components/BottomSheet';
 import { ChainList } from '../../../src/components/chains/ChainList';
-import { useClient } from '../../../src/net/ConnectionProvider';
+import { useClient, useConnection } from '../../../src/net/ConnectionProvider';
+import { NewPluginSheet } from '../../../src/components/automation/NewPluginSheet';
 import { actions } from '../../../src/store/store';
 import { useFeedback } from '../../../src/components/AppFeedback';
 import {
@@ -45,6 +46,7 @@ import { getChainOptionsFromScripts } from '../../../src/features/chains';
 import { chainReadyAt } from '../../../src/generated/client-contract/chains';
 import { resolveAutomationTarget } from '../../../src/features/plugins/automationTarget';
 import type { Chain } from '../../../src/store/types';
+import type { NewPluginInput } from '../../../src/runtime/JNbotRuntime';
 import { TriggerList } from '../../../src/components/triggers/TriggerList';
 import { useTriggerEditor } from '../../../src/components/triggers/useTriggerEditor';
 import { useOpenShareLink, useShareActions } from '../../../src/features/shares';
@@ -64,6 +66,7 @@ const EMPTY_CHAINS: Record<string, Chain> = {};
 export default function Automation() {
   const router = useRouter();
   const client = useClient();
+  const { mode } = useConnection();
   const { showMessage } = useFeedback();
   const params = useLocalSearchParams<{ scriptId?: string; source?: string; section?: Section }>();
   const { openPlugin, openProfileScript } = useAutomationDrawer();
@@ -117,6 +120,7 @@ export default function Automation() {
   const [query, setQuery] = useState("");
   const [pluginMenuOpen, setPluginMenuOpen] = useState(false);
   const [folderNameOpen, setFolderNameOpen] = useState(false);
+  const [newPluginOpen, setNewPluginOpen] = useState(false);
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const [folder, setFolder] = useState('__all__');
   const [preferences, setPreferences] = useState<PluginFolderPreferences>({ extraFolders: [], sortOrder: 'date' });
@@ -216,6 +220,14 @@ export default function Automation() {
   }, [pluginMetadata, saveMetadata]);
 
   const openMoveSheet = useCallback((item: MacroInfo | ProfileScriptInfo) => setMovePlugin(item as MacroInfo), []);
+
+  const createPlugin = useCallback(async (input: NewPluginInput) => {
+    if (!client) throw new Error('Connect to a runtime first.');
+    const plugin = await client.createPlugin(input);
+    if (folder !== '__all__' && folder !== '__none__') moveToFolder(plugin, folder);
+    setNewPluginOpen(false);
+    void openPlugin(plugin, 'details');
+  }, [client, folder, moveToFolder, openPlugin]);
 
   const createChain = useCallback(() => {
     if (canUseScripts) router.push({ pathname: '/(app)/chains/settings/[chainId]', params: { chainId: 'new' } });
@@ -385,11 +397,13 @@ export default function Automation() {
       <BottomSheet visible={pluginMenuOpen} onClose={() => setPluginMenuOpen(false)} accessibilityLabel="Add plugin">
         <View style={styles.pluginMenu}>
           <Txt variant="heading" style={styles.pluginMenuTitle}>Add plugin</Txt>
+          {mode === 'local' ? <PluginMenuItem sf="plus" material="add" title="Create plugin" subtitle="Write your own" onPress={() => { setPluginMenuOpen(false); setNewPluginOpen(true); }} /> : null}
           <PluginMenuItem sf="storefront" material="storefront" title="Browse marketplace" subtitle="Find plugins, profiles and automations" onPress={() => { setPluginMenuOpen(false); router.push('/(app)/plugin-marketplace'); }} />
           <PluginMenuItem sf="folder" material="folder-open" title="Import .jnp file" subtitle="Install a plugin file from your device" onPress={() => { setPluginMenuOpen(false); router.push('/(app)/plugin-import'); }} />
           <PluginMenuItem sf="folder.badge.plus" material="create-new-folder" title="New folder" subtitle="Organize your installed plugins" onPress={() => { setPluginMenuOpen(false); setFolderNameOpen(true); }} />
         </View>
       </BottomSheet>
+      <NewPluginSheet visible={newPluginOpen} onCreate={createPlugin} onClose={() => setNewPluginOpen(false)} />
       <FolderNameSheet
         visible={folderNameOpen}
         existingNames={folders}
@@ -423,7 +437,7 @@ export default function Automation() {
   );
 }
 
-function PluginMenuItem({ sf, material, title, subtitle, onPress }: { sf: 'storefront' | 'folder' | 'folder.badge.plus'; material: 'storefront' | 'folder-open' | 'create-new-folder'; title: string; subtitle: string; onPress: () => void }) {
+function PluginMenuItem({ sf, material, title, subtitle, onPress }: { sf: 'plus' | 'storefront' | 'folder' | 'folder.badge.plus'; material: 'add' | 'storefront' | 'folder-open' | 'create-new-folder'; title: string; subtitle: string; onPress: () => void }) {
   return <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [styles.pluginMenuItem, pressed && styles.pluginMenuItemPressed]}>
     <View style={styles.pluginMenuIcon}><NativeIcon sf={sf} material={material} size={22} color={colors.primary} /></View>
     <View style={{ flex: 1, minWidth: 0 }}><Txt variant="heading">{title}</Txt><Txt variant="faint">{subtitle}</Txt></View>
